@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        background: #f5f5f5;
+      }
+      .card {
+        background: #fff;
+        padding: 24px;
+        border-radius: 16px;
+        max-width: 480px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+        margin-bottom: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Widget Demo: iframe</h2>
+      <p>Embedded Loyalty Widget below:</p>
+      <script
+        src="http://localhost:5173/widget/loader.js"
+        data-tenant="demo"
+        data-host="http://localhost:5173"
+        data-mode="iframe">
+      </script>
+    </div>
+
+    <div class="card">
+      <h2>Widget Demo: modal</h2>
+      <p>Click to open modal widget:</p>
+      <script
+        src="http://localhost:5173/widget/loader.js"
+        data-tenant="demo"
+        data-host="http://localhost:5173"
+        data-mode="modal">
+      </script>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,136 @@
+<template>
+  <div class="grid">
+    <div class="panel">
+      <h2>{{ t("titles.profile") }}</h2>
+      <div class="list">
+        <div class="list-item">
+          <div>{{ t("labels.email") }}</div>
+          <div>{{ user?.email }}</div>
+        </div>
+        <div class="list-item">
+          <div>{{ t("labels.emailVerified") }}</div>
+          <div>{{ user?.email_verified ? t("common.yes") : t("common.no") }}</div>
+        </div>
+        <div class="list-item">
+          <div>{{ t("labels.phone") }}</div>
+          <div>{{ user?.phone || "-" }}</div>
+        </div>
+        <div class="list-item">
+          <div>{{ t("labels.phoneVerified") }}</div>
+          <div>{{ user?.phone_verified ? t("common.yes") : t("common.no") }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel grid">
+      <h3>{{ t("sections.verifyEmail") }}</h3>
+      <button class="ghost" @click="requestEmailCode">{{ t("buttons.requestEmailCode") }}</button>
+      <input v-model="emailCode" :placeholder="t('placeholders.emailCode')" />
+      <button @click="confirmEmail">{{ t("buttons.confirm") }}</button>
+      <p class="small">{{ emailMessage }}</p>
+    </div>
+    <div class="panel grid">
+      <h3>{{ t("sections.bindPhone") }}</h3>
+      <input v-model="phone" :placeholder="t('placeholders.phone')" />
+      <button class="ghost" @click="requestPhone">{{ t("buttons.requestOtp") }}</button>
+      <input v-model="phoneCode" :placeholder="t('placeholders.phoneCode')" />
+      <button @click="confirmPhone">{{ t("buttons.confirm") }}</button>
+      <p class="small">{{ phoneMessage }}</p>
+    </div>
+    <div class="panel grid">
+      <h3>{{ t("sections.changePassword") }}</h3>
+      <input v-model="passwordCurrent" type="password" :placeholder="t('placeholders.currentPassword')" />
+      <input v-model="passwordNew" type="password" :placeholder="t('placeholders.newPassword')" />
+      <button @click="changePassword">{{ t("buttons.changePassword") }}</button>
+      <p class="small">{{ passwordMessage }}</p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { apiFetch } from "../../api";
+import { useAuthStore } from "../../stores/auth";
+
+const route = useRoute();
+const { t } = useI18n();
+const auth = useAuthStore();
+const tenant = route.params.tenant as string;
+const user = ref(auth.user);
+const emailCode = ref("");
+const emailMessage = ref("");
+const phone = ref("");
+const phoneCode = ref("");
+const phoneMessage = ref("");
+const passwordCurrent = ref("");
+const passwordNew = ref("");
+const passwordMessage = ref("");
+
+async function requestEmailCode() {
+  emailMessage.value = "";
+  await apiFetch(`/${tenant}/auth/email/request-code`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: user?.email }),
+  });
+  emailMessage.value = t("messages.codeSent");
+}
+
+async function confirmEmail() {
+  emailMessage.value = "";
+  await apiFetch(`/${tenant}/auth/email/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: user?.email, code: emailCode.value }),
+  });
+  emailMessage.value = t("messages.emailVerified");
+}
+
+async function requestPhone() {
+  phoneMessage.value = "";
+  const data = await apiFetch(`/${tenant}/auth/phone/request`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${auth.tokens?.access}`,
+    },
+    body: JSON.stringify({ phone: phone.value }),
+  });
+  phoneMessage.value = data.otp ? `${t("labels.otp")}: ${data.otp}` : t("messages.otpSent");
+}
+
+async function confirmPhone() {
+  phoneMessage.value = "";
+  await apiFetch(`/${tenant}/auth/phone/confirm`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${auth.tokens?.access}`,
+    },
+    body: JSON.stringify({ code: phoneCode.value }),
+  });
+  phoneMessage.value = t("messages.phoneVerified");
+}
+
+async function changePassword() {
+  passwordMessage.value = "";
+  await apiFetch(`/${tenant}/client/profile/password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${auth.tokens?.access}`,
+    },
+    body: JSON.stringify({ current_password: passwordCurrent.value, new_password: passwordNew.value }),
+  });
+  passwordMessage.value = t("messages.passwordChanged");
+}
+
+onMounted(async () => {
+  const data = await apiFetch(`/${tenant}/client/me`, {
+    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+  });
+  user.value = data;
+  phone.value = data.phone || "";
+});
+</script>

@@ -1,0 +1,41 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: loyalty
+      POSTGRES_USER: loyalty
+      POSTGRES_PASSWORD: loyalty
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+  backend:
+    build: ./backend
+    environment:
+      DJANGO_DEBUG: "1"
+      DJANGO_SECRET_KEY: dev-secret-key
+      DJANGO_ALLOWED_HOSTS: "*"
+      DATABASE_URL: postgres://loyalty:loyalty@db:5432/loyalty
+      JWT_ACCESS_MINUTES: "30"
+      JWT_REFRESH_DAYS: "7"
+      MAX_EARN_PER_DAY_PER_CARD: "100000"
+      MAX_OPS_PER_HOUR_PER_STAFF: "120"
+      SMTP_HOST: ""
+      SMTP_PORT: "587"
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
+      SMTP_USE_TLS: "1"
+      EMAIL_FROM: "no-reply@loyalty.local"
+      OTP_RATE_LIMIT_PER_HOUR: "5"
+      EMAIL_CODE_RATE_LIMIT_PER_HOUR: "5"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py makemigrations loyalty && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+volumes:
+  db_data:
