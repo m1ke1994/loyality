@@ -46,10 +46,6 @@ async function login() {
       body: JSON.stringify({ email: email.value, password: password.value }),
     });
     auth.setAuth({ user: data.user, tokens: data.tokens, tenant });
-    if (!data.user.phone_verified) {
-      router.push(`/t/${tenant}/bind-phone`);
-      return;
-    }
     router.push(`/t/${tenant}/cabinet`);
   } catch (err: any) {
     if (err.code === "EMAIL_NOT_VERIFIED") {

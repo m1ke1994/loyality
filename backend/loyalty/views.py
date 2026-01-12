@@ -427,8 +427,6 @@ class ClientQRIssueView(TenantMixin, APIView):
     permission_classes = [IsTenantMember, IsClient]
 
     def post(self, request, tenant_slug):
-        if not request.user.phone_verified:
-            return Response({"detail": "PHONE_NOT_VERIFIED"}, status=status.HTTP_400_BAD_REQUEST)
         if not request.user.email_verified:
             return Response({"detail": "EMAIL_NOT_VERIFIED"}, status=status.HTTP_400_BAD_REQUEST)
         token = uuid4().hex
