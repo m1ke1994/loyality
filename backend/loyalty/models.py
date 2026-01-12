@@ -234,10 +234,17 @@ class LoyaltyOperation(models.Model):
 
 class EmailVerificationCode(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_codes")
-    code_hash = models.CharField(max_length=128)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
-    requested_at = models.DateTimeField(auto_now_add=True)
     attempts = models.IntegerField(default=0)
+    is_used = models.BooleanField(default=False)
+    last_sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "is_used"]),
+        ]
 
 
 class AuditLog(models.Model):

@@ -116,16 +116,18 @@ CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORI
 
 X_FRAME_OPTIONS = "ALLOWALL"
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-SMTP_HOST = os.getenv("SMTP_HOST", "")
-if SMTP_HOST:
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = SMTP_HOST or "localhost"
-EMAIL_PORT = int(os.getenv("SMTP_PORT", "25"))
-EMAIL_HOST_USER = os.getenv("SMTP_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-EMAIL_USE_TLS = os.getenv("SMTP_USE_TLS", "0") == "1"
-DEFAULT_FROM_EMAIL = os.getenv("EMAIL_FROM", "no-reply@loyalty.local")
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = os.getenv("EMAIL_HOST", os.getenv("SMTP_HOST", "localhost"))
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", os.getenv("SMTP_PORT", "25")))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", os.getenv("SMTP_USER", ""))
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", os.getenv("SMTP_PASSWORD", ""))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", os.getenv("SMTP_USE_TLS", "0")) == "1"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "0") == "1"
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", os.getenv("EMAIL_FROM", "no-reply@loyalty.local"))
+
+EMAIL_CODE_TTL_MINUTES = int(os.getenv("EMAIL_CODE_TTL_MINUTES", "10"))
+EMAIL_CODE_MAX_ATTEMPTS = int(os.getenv("EMAIL_CODE_MAX_ATTEMPTS", "5"))
+EMAIL_CODE_RESEND_SECONDS = int(os.getenv("EMAIL_CODE_RESEND_SECONDS", "60"))
 
 CACHES = {
     "default": {

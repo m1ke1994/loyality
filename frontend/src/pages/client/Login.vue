@@ -10,9 +10,7 @@
     </p>
     <div v-if="needsVerify" class="panel muted">
       <p class="small">{{ t("messages.emailVerificationRequired") }}</p>
-      <button class="ghost" @click="requestCode">{{ t("buttons.requestCode") }}</button>
-      <input v-model="code" :placeholder="t('placeholders.emailCode')" />
-      <button @click="confirmCode">{{ t("buttons.confirmEmail") }}</button>
+      <button class="ghost" @click="goVerify">{{ t("buttons.enterCode") }}</button>
     </div>
     <p v-if="error" class="small">{{ error }}</p>
     <p v-if="message" class="small">{{ message }}</p>
@@ -33,7 +31,6 @@ const auth = useAuthStore();
 const tenant = route.params.tenant as string;
 const email = ref("");
 const password = ref("");
-const code = ref("");
 const error = ref("");
 const message = ref("");
 const needsVerify = ref(false);
@@ -41,6 +38,7 @@ const needsVerify = ref(false);
 async function login() {
   error.value = "";
   message.value = "";
+  needsVerify.value = false;
   try {
     const data = await apiFetch(`/${tenant}/auth/login`, {
       method: "POST",
@@ -48,41 +46,21 @@ async function login() {
       body: JSON.stringify({ email: email.value, password: password.value }),
     });
     auth.setAuth({ user: data.user, tokens: data.tokens, tenant });
+    if (!data.user.phone_verified) {
+      router.push(`/t/${tenant}/bind-phone`);
+      return;
+    }
     router.push(`/t/${tenant}/cabinet`);
   } catch (err: any) {
-    if (err.message === "EMAIL_NOT_VERIFIED") {
+    if (err.code === "EMAIL_NOT_VERIFIED") {
       needsVerify.value = true;
+      message.value = t("messages.emailVerificationRequired");
     }
     error.value = err.message;
   }
 }
 
-async function requestCode() {
-  message.value = "";
-  try {
-    await apiFetch(`/${tenant}/auth/email/request-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.value }),
-    });
-    message.value = t("messages.codeSent");
-  } catch (err: any) {
-    error.value = err.message;
-  }
-}
-
-async function confirmCode() {
-  message.value = "";
-  try {
-    await apiFetch(`/${tenant}/auth/email/confirm`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.value, code: code.value }),
-    });
-    message.value = t("messages.emailVerifiedLogin");
-    needsVerify.value = false;
-  } catch (err: any) {
-    error.value = err.message;
-  }
+function goVerify() {
+  router.push({ path: `/t/${tenant}/verify-email`, query: { email: email.value } });
 }
 </script>

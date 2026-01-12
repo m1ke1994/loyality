@@ -13,6 +13,12 @@ from .models import (
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(min_length=8)
+    password2 = serializers.CharField(min_length=8)
+
+    def validate(self, attrs):
+        if attrs.get("password") != attrs.get("password2"):
+            raise serializers.ValidationError({"password2": "Passwords do not match"})
+        return attrs
 
 
 class LoginSerializer(serializers.Serializer):
@@ -26,7 +32,7 @@ class EmailRequestSerializer(serializers.Serializer):
 
 class EmailConfirmSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    code = serializers.CharField(max_length=6)
+    code = serializers.RegexField(regex=r"^\d{6}$")
 
 
 class PhoneRequestSerializer(serializers.Serializer):

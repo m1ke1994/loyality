@@ -31,6 +31,8 @@ from .views import (
 urlpatterns = [
     path("<slug:tenant_slug>/auth/register", RegisterView.as_view()),
     path("<slug:tenant_slug>/auth/login", LoginView.as_view()),
+    path("<slug:tenant_slug>/auth/verify-email", EmailConfirmView.as_view()),
+    path("<slug:tenant_slug>/auth/resend-code", EmailRequestCodeView.as_view()),
     path("<slug:tenant_slug>/auth/email/request-code", EmailRequestCodeView.as_view()),
     path("<slug:tenant_slug>/auth/email/confirm", EmailConfirmView.as_view()),
     path("<slug:tenant_slug>/auth/phone/request", PhoneRequestView.as_view()),

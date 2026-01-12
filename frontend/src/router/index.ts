@@ -6,6 +6,8 @@ import CashierLayout from "../layouts/CashierLayout.vue";
 import AdminLayout from "../layouts/AdminLayout.vue";
 import ClientLogin from "../pages/client/Login.vue";
 import ClientRegister from "../pages/client/Register.vue";
+import ClientVerifyEmail from "../pages/client/VerifyEmail.vue";
+import BindPhone from "../pages/BindPhone.vue";
 import ClientCabinet from "../pages/client/Cabinet.vue";
 import ClientQR from "../pages/client/QR.vue";
 import ClientOffers from "../pages/client/Offers.vue";
@@ -67,6 +69,8 @@ const router = createRouter({
     { path: "/", component: Home },
     { path: "/login", redirect: (to) => `/t/${getTenantForRedirect(to)}/login` },
     { path: "/register", redirect: (to) => `/t/${getTenantForRedirect(to)}/register` },
+    { path: "/verify-email", redirect: (to) => `/t/${getTenantForRedirect(to)}/verify-email` },
+    { path: "/bind-phone", redirect: (to) => `/t/${getTenantForRedirect(to)}/bind-phone` },
     { path: "/cabinet", redirect: (to) => `/t/${getTenantForRedirect(to)}/cabinet` },
     { path: "/offers", redirect: (to) => `/t/${getTenantForRedirect(to)}/offers` },
     { path: "/history", redirect: (to) => `/t/${getTenantForRedirect(to)}/history` },
@@ -86,6 +90,8 @@ const router = createRouter({
       children: [
         { path: "login", component: ClientLogin, meta: { guestOnly: true } },
         { path: "register", component: ClientRegister, meta: { guestOnly: true } },
+        { path: "verify-email", component: ClientVerifyEmail, meta: { guestOnly: true } },
+        { path: "bind-phone", component: BindPhone, meta: { requiresAuth: true } },
         { path: "cabinet", component: ClientCabinet, meta: { requiresAuth: true } },
         { path: "qr", component: ClientQR, meta: { requiresAuth: true } },
         { path: "offers", component: ClientOffers, meta: { requiresAuth: true } },

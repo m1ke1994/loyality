@@ -1,16 +1,11 @@
 <template>
   <div class="panel grid small-form">
     <h2>{{ t("titles.register") }}</h2>
-    <div v-if="step === 'form'" class="grid">
+    <div class="grid">
       <input v-model="email" :placeholder="t('placeholders.email')" />
       <input v-model="password" type="password" :placeholder="t('placeholders.password')" />
+      <input v-model="password2" type="password" :placeholder="t('placeholders.passwordRepeat')" />
       <button @click="register">{{ t("buttons.createAccount") }}</button>
-    </div>
-    <div v-else class="grid">
-      <p class="small">{{ t("messages.verificationSentTo", { email }) }}</p>
-      <input v-model="code" :placeholder="t('placeholders.emailCode')" />
-      <button @click="confirm">{{ t("buttons.confirmEmail") }}</button>
-      <button class="ghost" @click="resend">{{ t("buttons.resendCode") }}</button>
     </div>
     <p v-if="message" class="small">{{ message }}</p>
     <p v-if="error" class="small">{{ error }}</p>
@@ -29,10 +24,9 @@ const { t } = useI18n();
 const tenant = route.params.tenant as string;
 const email = ref("");
 const password = ref("");
-const code = ref("");
+const password2 = ref("");
 const message = ref("");
 const error = ref("");
-const step = ref<"form" | "verify">("form");
 
 async function register() {
   error.value = "";
@@ -41,41 +35,10 @@ async function register() {
     await apiFetch(`/${tenant}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.value, password: password.value }),
+      body: JSON.stringify({ email: email.value, password: password.value, password2: password2.value }),
     });
-    step.value = "verify";
     message.value = t("messages.verificationCodeSent");
-  } catch (err: any) {
-    error.value = err.message;
-  }
-}
-
-async function confirm() {
-  error.value = "";
-  message.value = "";
-  try {
-    await apiFetch(`/${tenant}/auth/email/confirm`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.value, code: code.value }),
-    });
-    message.value = t("messages.emailVerifiedLogin");
-    router.push(`/t/${tenant}/login`);
-  } catch (err: any) {
-    error.value = err.message;
-  }
-}
-
-async function resend() {
-  error.value = "";
-  message.value = "";
-  try {
-    await apiFetch(`/${tenant}/auth/email/request-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.value }),
-    });
-    message.value = t("messages.codeResent");
+    router.push({ path: `/t/${tenant}/verify-email`, query: { email: email.value } });
   } catch (err: any) {
     error.value = err.message;
   }

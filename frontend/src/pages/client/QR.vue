@@ -11,13 +11,14 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import QRCode from "qrcode";
 import { apiFetch } from "../../api";
 import { useAuthStore } from "../../stores/auth";
 
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const auth = useAuthStore();
 const tenant = route.params.tenant as string;
@@ -27,6 +28,10 @@ let timer: number | null = null;
 
 async function issueQr() {
   error.value = "";
+  if (!auth.user?.phone_verified) {
+    router.push(`/t/${tenant}/bind-phone`);
+    return;
+  }
   try {
     const data = await apiFetch(`/${tenant}/client/qr/issue`, {
       method: "POST",

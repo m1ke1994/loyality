@@ -4,8 +4,12 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_BASE}${path}`, options);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const msg = data.detail || "Request failed";
-    throw new Error(msg);
+    const msg = data.message || data.detail || "Request failed";
+    const err: Error & { code?: string } = new Error(msg);
+    if (data.code || data.detail) {
+      err.code = data.code || data.detail;
+    }
+    throw err;
   }
   return data;
 }

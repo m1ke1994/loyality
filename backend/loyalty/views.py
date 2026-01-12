@@ -2,7 +2,7 @@ import hashlib
 import secrets
 from decimal import Decimal
 from uuid import uuid4
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -88,9 +88,33 @@ def audit_log(tenant: Tenant, user: User | None, action: str, metadata: dict | N
 
 
 def send_email_code(user: User, code: str):
-    subject = "Your Loyalty verification code"
-    message = f"Your verification code is: {code}"
+    subject = "Код подтверждения"
+    message = f"Ваш код: {code}. Он действует {settings.EMAIL_CODE_TTL_MINUTES} минут."
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
+
+
+def invalidate_email_codes(user: User):
+    EmailVerificationCode.objects.filter(user=user, is_used=False).update(is_used=True)
+
+
+def can_resend_email_code(user: User, now: datetime) -> bool:
+    latest = EmailVerificationCode.objects.filter(user=user).order_by("-last_sent_at", "-created_at").first()
+    if not latest or not latest.last_sent_at:
+        return True
+    elapsed = (now - latest.last_sent_at).total_seconds()
+    return elapsed >= settings.EMAIL_CODE_RESEND_SECONDS
+
+
+def create_email_code(user: User, now: datetime):
+    code = generate_code()
+    record = EmailVerificationCode.objects.create(
+        user=user,
+        code=code,
+        expires_at=now + timedelta(minutes=settings.EMAIL_CODE_TTL_MINUTES),
+        last_sent_at=now,
+    )
+    send_email_code(user, code)
+    return record
 
 
 def mask_email(email: str) -> str:
@@ -200,17 +224,19 @@ class RegisterView(TenantMixin, APIView):
         password = serializer.validated_data["password"]
         if User.objects.filter(tenant=tenant, email=email).exists():
             return Response({"detail": "EMAIL_EXISTS"}, status=status.HTTP_400_BAD_REQUEST)
-        user = User.objects.create_user(email=email, password=password, tenant=tenant, role=User.Role.CLIENT)
-        LoyaltyCard.objects.create(user=user, tenant=tenant)
-        code = generate_code()
-        EmailVerificationCode.objects.create(
-            user=user,
-            code_hash=hash_code(code),
-            expires_at=timezone.now() + timedelta(minutes=10),
+        user = User.objects.create_user(
+            email=email,
+            password=password,
+            tenant=tenant,
+            role=User.Role.CLIENT,
+            is_active=False,
+            email_verified=False,
         )
-        send_email_code(user, code)
+        LoyaltyCard.objects.create(user=user, tenant=tenant)
+        invalidate_email_codes(user)
+        create_email_code(user, timezone.now())
         audit_log(tenant, user, "register", {"email": email})
-        return Response({"detail": "EMAIL_VERIFICATION_SENT"})
+        return Response({"detail": "Код отправлен на почту"}, status=status.HTTP_201_CREATED)
 
 
 class LoginView(TenantMixin, APIView):
@@ -228,8 +254,15 @@ class LoginView(TenantMixin, APIView):
         user = User.objects.filter(tenant=tenant, email=email).first()
         if not user or not user.check_password(password):
             return Response({"detail": "INVALID_CREDENTIALS"}, status=status.HTTP_401_UNAUTHORIZED)
-        if not user.email_verified:
-            return Response({"detail": "EMAIL_NOT_VERIFIED"}, status=status.HTTP_403_FORBIDDEN)
+        if not user.is_active or not user.email_verified:
+            now = timezone.now()
+            if not user.email_verified and can_resend_email_code(user, now):
+                invalidate_email_codes(user)
+                create_email_code(user, now)
+            return Response(
+                {"detail": "EMAIL_NOT_VERIFIED", "message": "Подтвердите email, код отправлен на почту"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         tokens = issue_tokens(user)
         audit_log(tenant, user, "login", {})
         return Response({"tokens": tokens, "user": UserSerializer(user).data})
@@ -247,17 +280,15 @@ class EmailRequestCodeView(TenantMixin, APIView):
         if rate_limited(rate_key, settings.EMAIL_CODE_RATE_LIMIT_PER_HOUR):
             return Response({"detail": "RATE_LIMIT"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
         user = User.objects.filter(tenant=tenant, email=email).first()
-        if not user:
-            return Response({"detail": "USER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
-        code = generate_code()
-        EmailVerificationCode.objects.create(
-            user=user,
-            code_hash=hash_code(code),
-            expires_at=timezone.now() + timedelta(minutes=10),
-        )
-        send_email_code(user, code)
+        if not user or user.email_verified:
+            return Response({"detail": "Код отправлен на почту"})
+        now = timezone.now()
+        if not can_resend_email_code(user, now):
+            return Response({"detail": "RESEND_TOO_SOON"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        invalidate_email_codes(user)
+        create_email_code(user, now)
         audit_log(tenant, user, "email_code_requested", {})
-        return Response({"detail": "EMAIL_CODE_SENT"})
+        return Response({"detail": "Код отправлен на почту"})
 
 
 class EmailConfirmView(TenantMixin, APIView):
@@ -271,20 +302,32 @@ class EmailConfirmView(TenantMixin, APIView):
         code = serializer.validated_data["code"]
         user = User.objects.filter(tenant=tenant, email=email).first()
         if not user:
-            return Response({"detail": "USER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
-        record = EmailVerificationCode.objects.filter(user=user).order_by("-requested_at").first()
+            return Response({"detail": "CODE_INVALID"}, status=status.HTTP_400_BAD_REQUEST)
+        record = EmailVerificationCode.objects.filter(user=user, is_used=False).order_by("-created_at").first()
         if not record:
-            return Response({"detail": "CODE_NOT_FOUND"}, status=status.HTTP_400_BAD_REQUEST)
-        record.attempts += 1
-        record.save()
-        if timezone.now() > record.expires_at:
+            return Response({"detail": "CODE_INVALID"}, status=status.HTTP_400_BAD_REQUEST)
+        now = timezone.now()
+        if record.expires_at < now:
+            record.is_used = True
+            record.save(update_fields=["is_used"])
             return Response({"detail": "CODE_EXPIRED"}, status=status.HTTP_400_BAD_REQUEST)
-        if record.code_hash != hash_code(code):
+        if record.attempts >= settings.EMAIL_CODE_MAX_ATTEMPTS:
+            record.is_used = True
+            record.save(update_fields=["is_used"])
+            return Response({"detail": "CODE_ATTEMPTS_EXCEEDED"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        if record.code != code:
+            record.attempts += 1
+            if record.attempts >= settings.EMAIL_CODE_MAX_ATTEMPTS:
+                record.is_used = True
+            record.save(update_fields=["attempts", "is_used"])
             return Response({"detail": "CODE_INVALID"}, status=status.HTTP_400_BAD_REQUEST)
         user.email_verified = True
-        user.save()
+        user.is_active = True
+        user.save(update_fields=["email_verified", "is_active"])
+        record.is_used = True
+        record.save(update_fields=["is_used"])
         audit_log(tenant, user, "email_verified", {})
-        return Response({"detail": "EMAIL_VERIFIED"})
+        return Response({"detail": "Почта подтверждена"})
 
 
 class PhoneRequestView(TenantMixin, APIView):
