@@ -208,7 +208,8 @@
   "errors": {
     "notClient": "Not a client account.",
     "notCashier": "Not a cashier account.",
-    "notAdmin": "Not an admin account."
+    "notAdmin": "Not an admin account.",
+    "forbidden": "Insufficient permissions."
   },
   "accessibility": {
     "languageToggle": "Language toggle",

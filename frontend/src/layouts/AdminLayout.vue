@@ -34,6 +34,7 @@
         @logout="logout"
       />
       <main class="page">
+        <div v-if="noticeMessage" class="panel muted small">{{ noticeMessage }}</div>
         <router-view />
       </main>
     </div>
@@ -56,6 +57,9 @@ const tenant = route.params.tenant as string;
 const theme = ref("light");
 const drawerOpen = ref(false);
 const isAuthenticated = computed(() => Boolean(auth.tokens?.access));
+const noticeMessage = computed(() =>
+  route.query.notice === "forbidden" ? t("errors.forbidden") : ""
+);
 const navItems = computed(() => [
   { to: `/t/${tenant}/admin/dashboard`, label: t("menu.dashboard") },
   { to: `/t/${tenant}/admin/customers`, label: t("menu.customers") },

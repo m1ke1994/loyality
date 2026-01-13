@@ -14,7 +14,7 @@ class IsClient(permissions.BasePermission):
 
 class IsCashier(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in ("CASHIER", "ADMIN")
+        return request.user.is_authenticated and request.user.role == "CASHIER"
 
 
 class IsAdmin(permissions.BasePermission):

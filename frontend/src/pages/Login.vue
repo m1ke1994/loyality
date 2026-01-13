@@ -31,22 +31,22 @@ const error = ref("");
 async function login() {
   error.value = "";
   try {
-    const data = await apiFetch(`/${tenant}/auth/login`, {
+    const data = await apiFetch(`/${tenant}/auth/client/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, password: password.value }),
     });
     if (data.user.role !== "CLIENT") {
-      throw new Error(t("errors.notClient"));
+      throw new Error(t("errors.forbidden"));
     }
-    auth.setAuth({ user: data.user, tokens: data.tokens });
+    auth.setAuth({ user: data.user, tokens: data.tokens, tenant });
     if (!data.user.phone_verified) {
       router.push(`/t/${tenant}/bind-phone`);
       return;
     }
     router.push(`/t/${tenant}/cabinet`);
   } catch (err: any) {
-    error.value = err.message;
+    error.value = err.code === "ROLE_NOT_ALLOWED" ? t("errors.forbidden") : err.message;
   }
 }
 </script>

@@ -27,18 +27,18 @@ const error = ref("");
 async function login() {
   error.value = "";
   try {
-    const data = await apiFetch(`/${tenant}/auth/login`, {
+    const data = await apiFetch(`/${tenant}/auth/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, password: password.value }),
     });
     if (data.user.role !== "ADMIN") {
-      throw new Error(t("errors.notAdmin"));
+      throw new Error(t("errors.forbidden"));
     }
     auth.setAuth({ user: data.user, tokens: data.tokens, tenant });
     router.push(`/t/${tenant}/admin/dashboard`);
   } catch (err: any) {
-    error.value = err.message;
+    error.value = err.code === "ROLE_NOT_ALLOWED" ? t("errors.forbidden") : err.message;
   }
 }
 </script>

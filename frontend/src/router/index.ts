@@ -25,6 +25,7 @@ import AdminOperations from "../pages/admin/Operations.vue";
 import AdminOffers from "../pages/admin/Offers.vue";
 import AdminSettings from "../pages/admin/Settings.vue";
 import { useAuthStore } from "../stores/auth";
+import { apiFetch } from "../api";
 
 let authLoaded = false;
 
@@ -43,12 +44,12 @@ function getSectionLoginPath(to: RouteLocationNormalized, tenant: string) {
   return `/t/${tenant}/login`;
 }
 
-function getSectionDefaultPath(to: RouteLocationNormalized, tenant: string) {
-  if (to.path.includes("/cashier")) {
-    return `/t/${tenant}/cashier/scan`;
-  }
-  if (to.path.includes("/admin")) {
+function getRoleDefaultPath(role: string | undefined, tenant: string) {
+  if (role === "ADMIN") {
     return `/t/${tenant}/admin/dashboard`;
+  }
+  if (role === "CASHIER") {
+    return `/t/${tenant}/cashier/scan`;
   }
   return `/t/${tenant}/cabinet`;
 }
@@ -86,45 +87,45 @@ const router = createRouter({
       path: "/t/:tenant",
       component: ClientLayout,
       children: [
-        { path: "login", component: ClientLogin, meta: { guestOnly: true } },
-        { path: "register", component: ClientRegister, meta: { guestOnly: true } },
-        { path: "verify-email", component: ClientVerifyEmail, meta: { guestOnly: true } },
-        { path: "cabinet", component: ClientCabinet, meta: { requiresAuth: true } },
-        { path: "qr", component: ClientQR, meta: { requiresAuth: true } },
-        { path: "offers", component: ClientOffers, meta: { requiresAuth: true } },
-        { path: "history", component: ClientHistory, meta: { requiresAuth: true } },
-        { path: "profile", component: ClientProfile, meta: { requiresAuth: true } },
+        { path: "login", component: ClientLogin, meta: { guestOnly: true, role: "CLIENT" } },
+        { path: "register", component: ClientRegister, meta: { guestOnly: true, role: "CLIENT" } },
+        { path: "verify-email", component: ClientVerifyEmail, meta: { guestOnly: true, role: "CLIENT" } },
+        { path: "cabinet", component: ClientCabinet, meta: { requiresAuth: true, role: "CLIENT" } },
+        { path: "qr", component: ClientQR, meta: { requiresAuth: true, role: "CLIENT" } },
+        { path: "offers", component: ClientOffers, meta: { requiresAuth: true, role: "CLIENT" } },
+        { path: "history", component: ClientHistory, meta: { requiresAuth: true, role: "CLIENT" } },
+        { path: "profile", component: ClientProfile, meta: { requiresAuth: true, role: "CLIENT" } },
       ],
     },
     {
       path: "/t/:tenant/cashier",
       component: CashierLayout,
       children: [
-        { path: "login", component: CashierLogin, meta: { guestOnly: true } },
-        { path: "scan", component: CashierScan, meta: { requiresAuth: true } },
-        { path: "operations", component: CashierOperations, meta: { requiresAuth: true } },
+        { path: "login", component: CashierLogin, meta: { guestOnly: true, role: "CASHIER" } },
+        { path: "scan", component: CashierScan, meta: { requiresAuth: true, role: "CASHIER" } },
+        { path: "operations", component: CashierOperations, meta: { requiresAuth: true, role: "CASHIER" } },
       ],
     },
     {
       path: "/t/:tenant/admin",
       component: AdminLayout,
       children: [
-        { path: "login", component: AdminLogin, meta: { guestOnly: true } },
-        { path: "dashboard", component: AdminDashboard, meta: { requiresAuth: true } },
-        { path: "customers", component: AdminCustomers, meta: { requiresAuth: true } },
-        { path: "staff", component: AdminStaff, meta: { requiresAuth: true } },
-        { path: "locations", component: AdminLocations, meta: { requiresAuth: true } },
-        { path: "rules", component: AdminRules, meta: { requiresAuth: true } },
-        { path: "operations", component: AdminOperations, meta: { requiresAuth: true } },
-        { path: "offers", component: AdminOffers, meta: { requiresAuth: true } },
-        { path: "settings", component: AdminSettings, meta: { requiresAuth: true } },
+        { path: "login", component: AdminLogin, meta: { guestOnly: true, role: "ADMIN" } },
+        { path: "dashboard", component: AdminDashboard, meta: { requiresAuth: true, role: "ADMIN" } },
+        { path: "customers", component: AdminCustomers, meta: { requiresAuth: true, role: "ADMIN" } },
+        { path: "staff", component: AdminStaff, meta: { requiresAuth: true, role: "ADMIN" } },
+        { path: "locations", component: AdminLocations, meta: { requiresAuth: true, role: "ADMIN" } },
+        { path: "rules", component: AdminRules, meta: { requiresAuth: true, role: "ADMIN" } },
+        { path: "operations", component: AdminOperations, meta: { requiresAuth: true, role: "ADMIN" } },
+        { path: "offers", component: AdminOffers, meta: { requiresAuth: true, role: "ADMIN" } },
+        { path: "settings", component: AdminSettings, meta: { requiresAuth: true, role: "ADMIN" } },
       ],
     },
     { path: "/t/:tenant/widget", component: Widget },
   ],
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore();
   if (!authLoaded) {
     auth.load();
@@ -132,10 +133,22 @@ router.beforeEach((to) => {
   }
 
   const tenant = getTenant(to, auth.tenant || "demo");
-  const hasToken = Boolean(auth.tokens?.access);
+  let hasToken = Boolean(auth.tokens?.access);
+  if (hasToken && !auth.user) {
+    try {
+      const me = await apiFetch(`/${tenant}/auth/me`, {
+        headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+      });
+      auth.setAuth({ user: me, tokens: auth.tokens!, tenant });
+    } catch {
+      auth.logout();
+      hasToken = false;
+    }
+  }
+  const role = auth.user?.role;
 
   if (to.path === "/") {
-    return hasToken ? `/t/${tenant}/cabinet` : `/t/${tenant}/login`;
+    return hasToken ? getRoleDefaultPath(role, tenant) : `/t/${tenant}/login`;
   }
 
   if (to.meta.requiresAuth && !hasToken) {
@@ -143,7 +156,16 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.guestOnly && hasToken) {
-    return getSectionDefaultPath(to, tenant);
+    const target = getRoleDefaultPath(role, tenant);
+    if (to.meta.role && role && to.meta.role !== role) {
+      return { path: target, query: { notice: "forbidden" } };
+    }
+    return target;
+  }
+
+  if (to.meta.requiresAuth && role && to.meta.role && to.meta.role !== role) {
+    const target = getRoleDefaultPath(role, tenant);
+    return { path: target, query: { notice: "forbidden" } };
   }
 
   return true;

@@ -239,33 +239,67 @@ class RegisterView(TenantMixin, APIView):
         return Response({"detail": "Код отправлен на почту"}, status=status.HTTP_201_CREATED)
 
 
+def handle_login(request, tenant_slug, allowed_roles: list[str]):
+    tenant = get_object_or_404(Tenant, slug=tenant_slug)
+    serializer = LoginSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data["email"].lower()
+    password = serializer.validated_data["password"]
+    rate_key = f"rl:login:{tenant.id}:{email}"
+    if rate_limited(rate_key, 20):
+        return Response({"detail": "RATE_LIMIT"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    user = User.objects.filter(tenant=tenant, email=email).first()
+    if not user or not user.check_password(password):
+        return Response({"detail": "INVALID_CREDENTIALS"}, status=status.HTTP_401_UNAUTHORIZED)
+    if allowed_roles and user.role not in allowed_roles:
+        return Response({"detail": "ROLE_NOT_ALLOWED"}, status=status.HTTP_403_FORBIDDEN)
+    if not user.is_active or not user.email_verified:
+        now = timezone.now()
+        if not user.email_verified and can_resend_email_code(user, now):
+            invalidate_email_codes(user)
+            create_email_code(user, now)
+        return Response(
+            {"detail": "EMAIL_NOT_VERIFIED", "message": "EMAIL_NOT_VERIFIED"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    tokens = issue_tokens(user)
+    audit_log(tenant, user, "login", {})
+    return Response({"tokens": tokens, "user": UserSerializer(user).data})
+
+
 class LoginView(TenantMixin, APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, tenant_slug):
-        tenant = self.get_tenant()
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data["email"].lower()
-        password = serializer.validated_data["password"]
-        rate_key = f"rl:login:{tenant.id}:{email}"
-        if rate_limited(rate_key, 20):
-            return Response({"detail": "RATE_LIMIT"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-        user = User.objects.filter(tenant=tenant, email=email).first()
-        if not user or not user.check_password(password):
-            return Response({"detail": "INVALID_CREDENTIALS"}, status=status.HTTP_401_UNAUTHORIZED)
-        if not user.is_active or not user.email_verified:
-            now = timezone.now()
-            if not user.email_verified and can_resend_email_code(user, now):
-                invalidate_email_codes(user)
-                create_email_code(user, now)
-            return Response(
-                {"detail": "EMAIL_NOT_VERIFIED", "message": "Подтвердите email, код отправлен на почту"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        tokens = issue_tokens(user)
-        audit_log(tenant, user, "login", {})
-        return Response({"tokens": tokens, "user": UserSerializer(user).data})
+        return handle_login(request, tenant_slug, allowed_roles=[User.Role.CLIENT])
+
+
+class ClientLoginView(TenantMixin, APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, tenant_slug):
+        return handle_login(request, tenant_slug, allowed_roles=[User.Role.CLIENT])
+
+
+class CashierLoginView(TenantMixin, APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, tenant_slug):
+        return handle_login(request, tenant_slug, allowed_roles=[User.Role.CASHIER])
+
+
+class AdminLoginView(TenantMixin, APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, tenant_slug):
+        return handle_login(request, tenant_slug, allowed_roles=[User.Role.ADMIN])
+
+
+class AuthMeView(TenantMixin, APIView):
+    permission_classes = [IsTenantMember]
+
+    def get(self, request, tenant_slug):
+        return Response(UserSerializer(request.user).data)
 
 
 class EmailRequestCodeView(TenantMixin, APIView):

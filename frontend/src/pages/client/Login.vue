@@ -40,7 +40,7 @@ async function login() {
   message.value = "";
   needsVerify.value = false;
   try {
-    const data = await apiFetch(`/${tenant}/auth/login`, {
+    const data = await apiFetch(`/${tenant}/auth/client/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, password: password.value }),
@@ -52,7 +52,7 @@ async function login() {
       needsVerify.value = true;
       message.value = t("messages.emailVerificationRequired");
     }
-    error.value = err.message;
+    error.value = err.code === "ROLE_NOT_ALLOWED" ? t("errors.forbidden") : err.message;
   }
 }
 
