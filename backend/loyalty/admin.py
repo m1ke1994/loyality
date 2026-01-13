@@ -16,6 +16,9 @@ from .models import (
     AuditLog,
 )
 
+admin.site.site_header = "Панель администратора"
+admin.site.site_title = "Администрирование"
+admin.site.index_title = "Управление"
 
 admin.site.register(Tenant)
 admin.site.register(OrganizationSettings)

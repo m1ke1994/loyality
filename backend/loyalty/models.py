@@ -10,32 +10,44 @@ def build_username(tenant, email: str) -> str:
 
 
 class Tenant(models.Model):
-    slug = models.SlugField(unique=True)
-    name = models.CharField(max_length=120)
-    pos_api_key = models.CharField(max_length=64, blank=True)
+    slug = models.SlugField("Слаг", unique=True)
+    name = models.CharField("Название", max_length=120)
+    pos_api_key = models.CharField("POS API ключ", max_length=64, blank=True)
 
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = "Арендатор"
+        verbose_name_plural = "Арендаторы"
+
 
 class OrganizationSettings(models.Model):
-    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="settings")
-    brand_color = models.CharField(max_length=12, default="#2d6a4f")
-    email_from = models.EmailField(blank=True)
-    logo_url = models.URLField(blank=True)
+    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="settings", verbose_name="Арендатор")
+    brand_color = models.CharField("Цвет бренда", max_length=12, default="#2d6a4f")
+    email_from = models.EmailField("Email отправителя", blank=True)
+    logo_url = models.URLField("URL логотипа", blank=True)
 
     def __str__(self):
         return f"Settings:{self.tenant.slug}"
 
+    class Meta:
+        verbose_name = "Настройки организации"
+        verbose_name_plural = "Настройки организации"
+
 
 class Location(models.Model):
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="locations")
-    name = models.CharField(max_length=120)
-    address = models.CharField(max_length=255, blank=True)
-    pos_api_key = models.CharField(max_length=64, blank=True)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="locations", verbose_name="Арендатор")
+    name = models.CharField("Название", max_length=120)
+    address = models.CharField("Адрес", max_length=255, blank=True)
+    pos_api_key = models.CharField("POS API ключ", max_length=64, blank=True)
 
     def __str__(self):
         return f"{self.tenant.slug}:{self.name}"
+
+    class Meta:
+        verbose_name = "Локация"
+        verbose_name_plural = "Локации"
 
 
 class UserManager(BaseUserManager):
@@ -65,20 +77,22 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        CLIENT = "CLIENT", "Client"
-        CASHIER = "CASHIER", "Cashier"
-        ADMIN = "ADMIN", "Admin"
+        CLIENT = "CLIENT", "Клиент"
+        CASHIER = "CASHIER", "Кассир"
+        ADMIN = "ADMIN", "Администратор"
 
-    email = models.EmailField()
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="users", null=True, blank=True)
-    phone = models.CharField(max_length=32, blank=True)
-    phone_verified = models.BooleanField(default=False)
-    email_verified = models.BooleanField(default=False)
-    role = models.CharField(max_length=16, choices=Role.choices, default=Role.CLIENT)
-    otp_hash = models.CharField(max_length=128, blank=True)
-    otp_expires_at = models.DateTimeField(null=True, blank=True)
-    otp_requested_at = models.DateTimeField(null=True, blank=True)
-    otp_attempts = models.IntegerField(default=0)
+    email = models.EmailField("Email")
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="users", null=True, blank=True, verbose_name="Арендатор"
+    )
+    phone = models.CharField("Телефон", max_length=32, blank=True)
+    phone_verified = models.BooleanField("Телефон подтверждён", default=False)
+    email_verified = models.BooleanField("Email подтверждён", default=False)
+    role = models.CharField("Роль", max_length=16, choices=Role.choices, default=Role.CLIENT)
+    otp_hash = models.CharField("OTP хеш", max_length=128, blank=True)
+    otp_expires_at = models.DateTimeField("OTP истекает", null=True, blank=True)
+    otp_requested_at = models.DateTimeField("OTP запрошен", null=True, blank=True)
+    otp_attempts = models.IntegerField("Попытки OTP", default=0)
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = []
@@ -86,6 +100,8 @@ class User(AbstractUser):
     objects = UserManager()
 
     class Meta:
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
         constraints = [
             models.UniqueConstraint(fields=["tenant", "email"], name="uniq_user_email_per_tenant"),
         ]
@@ -99,82 +115,106 @@ class User(AbstractUser):
 
 
 class StaffProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="staff_profile")
-    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
-    is_active = models.BooleanField(default=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="staff_profile", verbose_name="Сотрудник")
+    location = models.ForeignKey(
+        Location, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Локация"
+    )
+    is_active = models.BooleanField("Активен", default=True)
 
     def __str__(self):
         return f"Staff:{self.user.email}"
 
+    class Meta:
+        verbose_name = "Профиль сотрудника"
+        verbose_name_plural = "Профили сотрудников"
+
 
 class LoyaltyCard(models.Model):
     class Status(models.TextChoices):
-        ACTIVE = "ACTIVE", "Active"
-        BLOCKED = "BLOCKED", "Blocked"
+        ACTIVE = "ACTIVE", "Активна"
+        BLOCKED = "BLOCKED", "Заблокирована"
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="card")
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="cards")
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
-    current_points = models.IntegerField(default=0)
-    tier = models.CharField(max_length=16, default="Bronze")
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="card", verbose_name="Клиент")
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="cards", verbose_name="Арендатор")
+    status = models.CharField("Статус", max_length=16, choices=Status.choices, default=Status.ACTIVE)
+    current_points = models.IntegerField("Текущие баллы", default=0)
+    tier = models.CharField("Уровень", max_length=16, default="Bronze")
 
     def __str__(self):
         return f"{self.tenant.slug}:{self.user.email}"
 
+    class Meta:
+        verbose_name = "Карта лояльности"
+        verbose_name_plural = "Карты лояльности"
+
 
 class OneTimeQR(models.Model):
-    card = models.ForeignKey(LoyaltyCard, on_delete=models.CASCADE, related_name="qr_tokens")
-    token = models.CharField(max_length=64, unique=True)
-    expires_at = models.DateTimeField()
-    used_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    card = models.ForeignKey(LoyaltyCard, on_delete=models.CASCADE, related_name="qr_tokens", verbose_name="Карта")
+    token = models.CharField("Токен", max_length=64, unique=True)
+    expires_at = models.DateTimeField("Истекает")
+    used_at = models.DateTimeField("Использован", null=True, blank=True)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Одноразовый QR-код"
+        verbose_name_plural = "Одноразовые QR-коды"
 
 
 class LoyaltyRule(models.Model):
     class Rounding(models.TextChoices):
-        FLOOR = "FLOOR", "Floor"
-        ROUND = "ROUND", "Round"
-        CEIL = "CEIL", "Ceil"
+        FLOOR = "FLOOR", "Вниз"
+        ROUND = "ROUND", "Округлить"
+        CEIL = "CEIL", "Вверх"
 
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="rules")
-    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="rules", null=True, blank=True)
-    earn_percent = models.DecimalField(max_digits=5, decimal_places=2, default=3)
-    rounding_mode = models.CharField(max_length=8, choices=Rounding.choices, default=Rounding.FLOOR)
-    min_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    bronze_threshold = models.IntegerField(default=0)
-    silver_threshold = models.IntegerField(default=500)
-    gold_threshold = models.IntegerField(default=1500)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="rules", verbose_name="Арендатор")
+    location = models.ForeignKey(
+        Location, on_delete=models.CASCADE, related_name="rules", null=True, blank=True, verbose_name="Локация"
+    )
+    earn_percent = models.DecimalField("Процент начисления", max_digits=5, decimal_places=2, default=3)
+    rounding_mode = models.CharField("Режим округления", max_length=8, choices=Rounding.choices, default=Rounding.FLOOR)
+    min_amount = models.DecimalField("Минимальная сумма", max_digits=12, decimal_places=2, default=0)
+    bronze_threshold = models.IntegerField("Порог Bronze", default=0)
+    silver_threshold = models.IntegerField("Порог Silver", default=500)
+    gold_threshold = models.IntegerField("Порог Gold", default=1500)
 
     class Meta:
+        verbose_name = "Правило лояльности"
+        verbose_name_plural = "Правила лояльности"
         unique_together = ("tenant", "location")
 
 
 class Offer(models.Model):
     class Type(models.TextChoices):
-        MULTIPLIER = "MULTIPLIER", "Multiplier"
-        BONUS = "BONUS", "Bonus"
-        COUPON = "COUPON", "Coupon"
+        MULTIPLIER = "MULTIPLIER", "Множитель"
+        BONUS = "BONUS", "Бонус"
+        COUPON = "COUPON", "Купон"
 
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="offers")
-    title = models.CharField(max_length=160)
-    description = models.TextField(blank=True)
-    type = models.CharField(max_length=16, choices=Type.choices, default=Type.BONUS)
-    multiplier = models.DecimalField(max_digits=6, decimal_places=2, default=1)
-    bonus_points = models.IntegerField(default=0)
-    active_from = models.DateTimeField(null=True, blank=True)
-    active_to = models.DateTimeField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="offers", verbose_name="Арендатор")
+    title = models.CharField("Название", max_length=160)
+    description = models.TextField("Описание", blank=True)
+    type = models.CharField("Тип", max_length=16, choices=Type.choices, default=Type.BONUS)
+    multiplier = models.DecimalField("Множитель", max_digits=6, decimal_places=2, default=1)
+    bonus_points = models.IntegerField("Бонусные баллы", default=0)
+    active_from = models.DateTimeField("Активно с", null=True, blank=True)
+    active_to = models.DateTimeField("Активно по", null=True, blank=True)
+    is_active = models.BooleanField("Активно", default=True)
+
+    class Meta:
+        verbose_name = "Предложение"
+        verbose_name_plural = "Предложения"
 
 
 class Coupon(models.Model):
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="coupons")
-    code = models.CharField(max_length=32)
-    title = models.CharField(max_length=160)
-    description = models.TextField(blank=True)
-    active_from = models.DateTimeField(null=True, blank=True)
-    active_to = models.DateTimeField(null=True, blank=True)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="coupons", verbose_name="Арендатор")
+    code = models.CharField("Код", max_length=32)
+    title = models.CharField("Название", max_length=160)
+    description = models.TextField("Описание", blank=True)
+    active_from = models.DateTimeField("Активно с", null=True, blank=True)
+    active_to = models.DateTimeField("Активно по", null=True, blank=True)
 
     class Meta:
+        verbose_name = "Купон"
+        verbose_name_plural = "Купоны"
         constraints = [
             models.UniqueConstraint(fields=["tenant", "code"], name="uniq_coupon_code_per_tenant"),
         ]
@@ -182,49 +222,57 @@ class Coupon(models.Model):
 
 class CouponAssignment(models.Model):
     class Status(models.TextChoices):
-        UNUSED = "UNUSED", "Unused"
-        USED = "USED", "Used"
+        UNUSED = "UNUSED", "Не использован"
+        USED = "USED", "Использован"
 
-    card = models.ForeignKey(LoyaltyCard, on_delete=models.CASCADE, related_name="coupon_assignments")
-    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name="assignments")
-    status = models.CharField(max_length=8, choices=Status.choices, default=Status.UNUSED)
-    used_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    card = models.ForeignKey(LoyaltyCard, on_delete=models.CASCADE, related_name="coupon_assignments", verbose_name="Карта")
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name="assignments", verbose_name="Купон")
+    status = models.CharField("Статус", max_length=8, choices=Status.choices, default=Status.UNUSED)
+    used_at = models.DateTimeField("Использован", null=True, blank=True)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Выданный купон"
+        verbose_name_plural = "Выданные купоны"
 
 
 class LoyaltyOperation(models.Model):
     class Type(models.TextChoices):
-        EARN = "EARN", "Earn"
-        REDEEM = "REDEEM", "Redeem"
-        REFUND = "REFUND", "Refund"
+        EARN = "EARN", "Начисление"
+        REDEEM = "REDEEM", "Списание"
+        REFUND = "REFUND", "Возврат"
 
     class Source(models.TextChoices):
         POS = "POS", "POS"
-        CASHIER_APP = "CASHIER_APP", "CashierApp"
-        ADMIN_PORTAL = "ADMIN_PORTAL", "AdminPortal"
+        CASHIER_APP = "CASHIER_APP", "Касса"
+        ADMIN_PORTAL = "ADMIN_PORTAL", "Админ-портал"
 
     class Status(models.TextChoices):
-        SUCCESS = "SUCCESS", "Success"
-        FAILED = "FAILED", "Failed"
+        SUCCESS = "SUCCESS", "Успешно"
+        FAILED = "FAILED", "Ошибка"
 
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="operations")
-    card = models.ForeignKey(LoyaltyCard, on_delete=models.CASCADE, related_name="operations")
-    type = models.CharField(max_length=8, choices=Type.choices)
-    source = models.CharField(max_length=16, choices=Source.choices)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    points = models.IntegerField(default=0)
-    receipt_id = models.CharField(max_length=64, null=True, blank=True)
-    order_id = models.CharField(max_length=64, null=True, blank=True)
-    idempotency_key = models.CharField(max_length=64, unique=True, null=True, blank=True)
-    original_operation = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True)
-    staff = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="staff_operations")
-    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=16, choices=Status.choices, default=Status.SUCCESS)
-    fail_reason = models.CharField(max_length=255, blank=True)
-    metadata = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="operations", verbose_name="Арендатор")
+    card = models.ForeignKey(LoyaltyCard, on_delete=models.CASCADE, related_name="operations", verbose_name="Карта")
+    type = models.CharField("Тип", max_length=8, choices=Type.choices)
+    source = models.CharField("Источник", max_length=16, choices=Source.choices)
+    amount = models.DecimalField("Сумма", max_digits=12, decimal_places=2)
+    points = models.IntegerField("Баллы", default=0)
+    receipt_id = models.CharField("Чек", max_length=64, null=True, blank=True)
+    order_id = models.CharField("Заказ", max_length=64, null=True, blank=True)
+    idempotency_key = models.CharField("Ключ идемпотентности", max_length=64, unique=True, null=True, blank=True)
+    original_operation = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Операция-источник")
+    staff = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="staff_operations", verbose_name="Сотрудник"
+    )
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Локация")
+    status = models.CharField("Статус", max_length=16, choices=Status.choices, default=Status.SUCCESS)
+    fail_reason = models.CharField("Причина ошибки", max_length=255, blank=True)
+    metadata = models.JSONField("Метаданные", default=dict, blank=True)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
 
     class Meta:
+        verbose_name = "Операция лояльности"
+        verbose_name_plural = "Операции лояльности"
         indexes = [
             models.Index(fields=["tenant", "receipt_id"]),
             models.Index(fields=["tenant", "idempotency_key"]),
@@ -233,23 +281,29 @@ class LoyaltyOperation(models.Model):
 
 
 class EmailVerificationCode(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_codes")
-    code = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
-    attempts = models.IntegerField(default=0)
-    is_used = models.BooleanField(default=False)
-    last_sent_at = models.DateTimeField(null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_codes", verbose_name="Пользователь")
+    code = models.CharField("Код", max_length=6)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+    expires_at = models.DateTimeField("Истекает")
+    attempts = models.IntegerField("Попытки", default=0)
+    is_used = models.BooleanField("Использован", default=False)
+    last_sent_at = models.DateTimeField("Последняя отправка", null=True, blank=True)
 
     class Meta:
+        verbose_name = "Код подтверждения email"
+        verbose_name_plural = "Коды подтверждения email"
         indexes = [
             models.Index(fields=["user", "is_used"]),
         ]
 
 
 class AuditLog(models.Model):
-    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="audit_logs")
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    action = models.CharField(max_length=64)
-    metadata = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="audit_logs", verbose_name="Арендатор")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Пользователь")
+    action = models.CharField("Действие", max_length=64)
+    metadata = models.JSONField("Метаданные", default=dict, blank=True)
+    created_at = models.DateTimeField("Создан", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Журнал аудита"
+        verbose_name_plural = "Журналы аудита"
