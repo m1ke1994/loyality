@@ -22,7 +22,7 @@
       </header>
       <DrawerMenu
         :open="drawerOpen"
-        :tenant="tenant"
+        :items="navItems"
         :title="t('brand.client')"
         :theme-label="themeLabel"
         :show-logout="isAuthenticated"
@@ -54,6 +54,13 @@ const tenant = route.params.tenant as string;
 const theme = ref("light");
 const drawerOpen = ref(false);
 const isAuthenticated = computed(() => Boolean(auth.tokens?.access));
+const navItems = computed(() => [
+  { to: `/t/${tenant}/cabinet`, label: t("menu.cabinet") },
+  { to: `/t/${tenant}/qr`, label: t("menu.qr") },
+  { to: `/t/${tenant}/offers`, label: t("menu.offers") },
+  { to: `/t/${tenant}/history`, label: t("menu.history") },
+  { to: `/t/${tenant}/profile`, label: t("menu.profile") },
+]);
 
 function applyTheme(next: string) {
   theme.value = next;

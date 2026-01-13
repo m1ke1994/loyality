@@ -3,14 +3,12 @@
     <aside class="drawer" @click.stop>
       <div class="drawer-header">{{ title }}</div>
       <nav class="drawer-nav">
-        <router-link :to="`/t/${tenant}/cabinet`" @click="close">{{ t("menu.cabinet") }}</router-link>
-        <router-link :to="`/t/${tenant}/qr`" @click="close">{{ t("menu.qr") }}</router-link>
-        <router-link :to="`/t/${tenant}/offers`" @click="close">{{ t("menu.offers") }}</router-link>
-        <router-link :to="`/t/${tenant}/history`" @click="close">{{ t("menu.history") }}</router-link>
-        <router-link :to="`/t/${tenant}/profile`" @click="close">{{ t("menu.profile") }}</router-link>
+        <router-link v-for="item in items" :key="item.to" :to="item.to" @click="close">
+          {{ item.label }}
+        </router-link>
       </nav>
       <div class="drawer-footer">
-        <LanguageToggle />
+        <LanguageToggle v-if="showLanguage" />
         <button class="ghost" @click="toggleTheme">{{ themeLabel }}</button>
         <button v-if="showLogout" class="ghost" @click="logout">{{ t("buttons.logout") }}</button>
       </div>
@@ -24,13 +22,24 @@ import LanguageToggle from "./LanguageToggle.vue";
 
 const { t } = useI18n();
 
-defineProps<{
-  open: boolean;
-  tenant: string;
-  title: string;
-  themeLabel: string;
-  showLogout: boolean;
-}>();
+type DrawerItem = {
+  to: string;
+  label: string;
+};
+
+withDefaults(
+  defineProps<{
+    open: boolean;
+    title: string;
+    items: DrawerItem[];
+    themeLabel: string;
+    showLogout: boolean;
+    showLanguage?: boolean;
+  }>(),
+  {
+    showLanguage: true,
+  }
+);
 
 const emit = defineEmits<{
   (e: "close"): void;
