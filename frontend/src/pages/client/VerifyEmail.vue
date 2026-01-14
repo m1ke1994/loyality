@@ -5,10 +5,6 @@
     <input v-model="code" :placeholder="t('placeholders.emailCode')" />
     <button @click="verify" :disabled="busy">{{ t("buttons.confirmEmail") }}</button>
     <button class="ghost" @click="resend" :disabled="busy">{{ t("buttons.resendCode") }}</button>
-    <div v-if="verified" class="panel muted">
-      <p class="small">{{ t("messages.emailVerified") }}</p>
-      <button @click="goLogin">{{ t("buttons.goToLogin") }}</button>
-    </div>
     <p v-if="message" class="small">{{ message }}</p>
     <p v-if="error" class="small">{{ error }}</p>
   </div>
@@ -19,16 +15,17 @@ import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { apiFetch } from "../../api";
+import { useAuthStore } from "../../stores/auth";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const auth = useAuthStore();
 const tenant = route.params.tenant as string;
 const email = ref((route.query.email as string) || "");
 const code = ref("");
 const message = ref("");
 const error = ref("");
-const verified = ref(false);
 const busy = ref(false);
 
 async function verify() {
@@ -36,13 +33,13 @@ async function verify() {
   message.value = "";
   busy.value = true;
   try {
-    await apiFetch(`/${tenant}/auth/verify-email`, {
+    const data = await apiFetch(`/${tenant}/auth/verify-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, code: code.value }),
     });
-    verified.value = true;
-    message.value = t("messages.emailVerified");
+    auth.setAuth({ user: data.user, tokens: data.tokens, tenant });
+    router.push(`/t/${tenant}/cabinet`);
   } catch (err: any) {
     error.value = err.message;
   } finally {
@@ -68,7 +65,4 @@ async function resend() {
   }
 }
 
-function goLogin() {
-  router.push(`/t/${tenant}/login`);
-}
 </script>

@@ -361,7 +361,14 @@ class EmailConfirmView(TenantMixin, APIView):
         record.is_used = True
         record.save(update_fields=["is_used"])
         audit_log(tenant, user, "email_verified", {})
-        return Response({"detail": "Почта подтверждена"})
+        tokens = issue_tokens(user)
+        return Response(
+            {
+                "detail": "EMAIL_VERIFIED",
+                "tokens": tokens,
+                "user": UserSerializer(user).data,
+            }
+        )
 
 
 class PhoneRequestView(TenantMixin, APIView):
