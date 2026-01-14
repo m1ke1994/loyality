@@ -701,6 +701,7 @@ class AdminStaffView(TenantMixin, APIView):
             tenant=tenant,
             role=role,
             email_verified=True,
+            is_active=True,
         )
         StaffProfile.objects.create(user=user, tenant=tenant, location=location)
         return Response({"detail": "CREATED"}, status=status.HTTP_201_CREATED)
