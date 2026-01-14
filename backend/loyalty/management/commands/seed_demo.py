@@ -61,7 +61,7 @@ class Command(BaseCommand):
                 email_verified=True,
                 phone_verified=True,
             )
-            StaffProfile.objects.create(user=admin_user, location=location)
+            StaffProfile.objects.create(user=admin_user, tenant=tenant, location=location)
 
         cashier = User.objects.filter(tenant=tenant, email="cashier@demo.local").first()
         if not cashier:
@@ -73,7 +73,7 @@ class Command(BaseCommand):
                 email_verified=True,
                 phone_verified=True,
             )
-            StaffProfile.objects.create(user=cashier, location=location)
+            StaffProfile.objects.create(user=cashier, tenant=tenant, location=location)
 
         client = User.objects.filter(tenant=tenant, email="client@demo.local").first()
         if not client:
@@ -111,7 +111,7 @@ class Command(BaseCommand):
             },
         )
         if card:
-            CouponAssignment.objects.get_or_create(card=card, coupon=coupon)
+            CouponAssignment.objects.get_or_create(card=card, coupon=coupon, tenant=tenant)
 
         self.stdout.write(self.style.SUCCESS("Seeded demo tenant (slug=demo)"))
         self.stdout.write(self.style.SUCCESS(f"POS API key: {tenant.pos_api_key}"))

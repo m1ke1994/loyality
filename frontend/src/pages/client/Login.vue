@@ -40,7 +40,7 @@ async function login() {
   message.value = "";
   needsVerify.value = false;
   try {
-    const data = await apiFetch(`/${tenant}/auth/client/login`, {
+    const data = await apiFetch(`/t/${tenant}/auth/client/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, password: password.value }),

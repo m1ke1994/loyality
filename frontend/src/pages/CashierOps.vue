@@ -30,7 +30,7 @@ const tenant = route.params.tenant as string;
 const ops = ref<any[]>([]);
 
 onMounted(async () => {
-  ops.value = await apiFetch(`/${tenant}/loyalty/ops`, {
+  ops.value = await apiFetch(`/t/${tenant}/loyalty/ops`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 });

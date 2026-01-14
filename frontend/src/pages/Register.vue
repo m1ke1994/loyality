@@ -27,7 +27,7 @@ const error = ref("");
 async function register() {
   error.value = "";
   try {
-    const data = await apiFetch(`/${tenant}/auth/register`, {
+    const data = await apiFetch(`/t/${tenant}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, password: password.value }),

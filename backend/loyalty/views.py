@@ -94,11 +94,11 @@ def send_email_code(user: User, code: str):
 
 
 def invalidate_email_codes(user: User):
-    EmailVerificationCode.objects.filter(user=user, is_used=False).update(is_used=True)
+    EmailVerificationCode.objects.filter(user=user, tenant=user.tenant, is_used=False).update(is_used=True)
 
 
 def can_resend_email_code(user: User, now: datetime) -> bool:
-    latest = EmailVerificationCode.objects.filter(user=user).order_by("-last_sent_at", "-created_at").first()
+    latest = EmailVerificationCode.objects.filter(user=user, tenant=user.tenant).order_by("-last_sent_at", "-created_at").first()
     if not latest or not latest.last_sent_at:
         return True
     elapsed = (now - latest.last_sent_at).total_seconds()
@@ -109,6 +109,7 @@ def create_email_code(user: User, now: datetime):
     code = generate_code()
     record = EmailVerificationCode.objects.create(
         user=user,
+        tenant=user.tenant,
         code=code,
         expires_at=now + timedelta(minutes=settings.EMAIL_CODE_TTL_MINUTES),
         last_sent_at=now,
@@ -163,8 +164,8 @@ def update_tier(card: LoyaltyCard, rule: LoyaltyRule):
         card.tier = "Bronze"
 
 
-def validate_qr(token: str) -> tuple[OneTimeQR | None, str | None]:
-    qr = OneTimeQR.objects.select_related("card", "card__user").filter(token=token).first()
+def validate_qr(tenant: Tenant, token: str) -> tuple[OneTimeQR | None, str | None]:
+    qr = OneTimeQR.objects.select_related("card", "card__user").filter(tenant=tenant, token=token).first()
     if not qr:
         return None, "QR_NOT_FOUND"
     if qr.expires_at < timezone.now():
@@ -203,6 +204,9 @@ def ops_limit_reached(card: LoyaltyCard, staff: User | None) -> tuple[bool, str 
 
 class TenantMixin:
     def get_tenant(self) -> Tenant:
+        tenant = getattr(self.request, "tenant", None)
+        if tenant:
+            return tenant
         slug = self.kwargs.get("tenant_slug")
         return get_object_or_404(Tenant, slug=slug)
 
@@ -240,7 +244,7 @@ class RegisterView(TenantMixin, APIView):
 
 
 def handle_login(request, tenant_slug, allowed_roles: list[str]):
-    tenant = get_object_or_404(Tenant, slug=tenant_slug)
+    tenant = getattr(request, "tenant", None) or get_object_or_404(Tenant, slug=tenant_slug)
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data["email"].lower()
@@ -337,7 +341,7 @@ class EmailConfirmView(TenantMixin, APIView):
         user = User.objects.filter(tenant=tenant, email=email).first()
         if not user:
             return Response({"detail": "CODE_INVALID"}, status=status.HTTP_400_BAD_REQUEST)
-        record = EmailVerificationCode.objects.filter(user=user, is_used=False).order_by("-created_at").first()
+        record = EmailVerificationCode.objects.filter(user=user, tenant=tenant, is_used=False).order_by("-created_at").first()
         if not record:
             return Response({"detail": "CODE_INVALID"}, status=status.HTTP_400_BAD_REQUEST)
         now = timezone.now()
@@ -472,7 +476,7 @@ class ClientQRIssueView(TenantMixin, APIView):
             return Response({"detail": "EMAIL_NOT_VERIFIED"}, status=status.HTTP_400_BAD_REQUEST)
         token = uuid4().hex
         expires_at = timezone.now() + timedelta(seconds=10)
-        OneTimeQR.objects.create(card=request.user.card, token=token, expires_at=expires_at)
+        OneTimeQR.objects.create(card=request.user.card, tenant=request.tenant, token=token, expires_at=expires_at)
         return Response({"qr_payload": token, "expires_at": expires_at.isoformat()})
 
 
@@ -497,7 +501,7 @@ class LoyaltyQRValidateView(TenantMixin, APIView):
         serializer = QRValidateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         token = serializer.validated_data["qr_payload"]
-        qr, error = validate_qr(token)
+        qr, error = validate_qr(request.tenant, token)
         if error:
             return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
         return Response(
@@ -698,7 +702,7 @@ class AdminStaffView(TenantMixin, APIView):
             role=role,
             email_verified=True,
         )
-        StaffProfile.objects.create(user=user, location=location)
+        StaffProfile.objects.create(user=user, tenant=tenant, location=location)
         return Response({"detail": "CREATED"}, status=status.HTTP_201_CREATED)
 
 
@@ -784,7 +788,7 @@ def handle_points(
     location=None,
     pos_payload=None,
 ):
-    tenant = Tenant.objects.get(slug=tenant_slug)
+    tenant = getattr(request, "tenant", None) or Tenant.objects.get(slug=tenant_slug)
     if source == LoyaltyOperation.Source.POS:
         serializer = POSPointsSerializer(data=pos_payload)
     else:
@@ -811,7 +815,12 @@ def handle_points(
         return Response({"detail": "LOCATION_NOT_FOUND"}, status=status.HTTP_400_BAD_REQUEST)
 
     with transaction.atomic():
-        qr = OneTimeQR.objects.select_for_update().select_related("card", "card__user").filter(token=token).first()
+        qr = (
+            OneTimeQR.objects.select_for_update()
+            .select_related("card", "card__user")
+            .filter(token=token, tenant=tenant)
+            .first()
+        )
         if not qr:
             return Response({"detail": "QR_NOT_FOUND"}, status=status.HTTP_400_BAD_REQUEST)
         if qr.expires_at < timezone.now():

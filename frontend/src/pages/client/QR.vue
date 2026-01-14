@@ -28,7 +28,7 @@ let timer: number | null = null;
 async function issueQr() {
   error.value = "";
   try {
-    const data = await apiFetch(`/${tenant}/client/qr/issue`, {
+    const data = await apiFetch(`/t/${tenant}/client/qr/issue`, {
       method: "POST",
       headers: { Authorization: `Bearer ${auth.tokens?.access}` },
     });

@@ -46,7 +46,7 @@ const ops = ref<any[]>([]);
 
 async function reload() {
   try {
-    const me = await apiFetch(`/${tenant}/client/me`, {
+    const me = await apiFetch(`/t/${tenant}/client/me`, {
       headers: { Authorization: `Bearer ${auth.tokens?.access}` },
     });
     points.value = typeof me?.current_points === "number" ? me.current_points : 0;
@@ -57,7 +57,7 @@ async function reload() {
   }
 
   try {
-    ops.value = await apiFetch(`/${tenant}/client/operations`, {
+    ops.value = await apiFetch(`/t/${tenant}/client/operations`, {
       headers: { Authorization: `Bearer ${auth.tokens?.access}` },
     });
   } catch {

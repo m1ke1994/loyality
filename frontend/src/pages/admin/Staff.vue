@@ -50,14 +50,14 @@ const locationId = ref<number | null>(null);
 const message = ref("");
 
 async function load() {
-  staff.value = await apiFetch(`/${tenant}/admin/staff`, {
+  staff.value = await apiFetch(`/t/${tenant}/admin/staff`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 }
 
 async function create() {
   message.value = "";
-  await apiFetch(`/${tenant}/admin/staff`, {
+  await apiFetch(`/t/${tenant}/admin/staff`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

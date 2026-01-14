@@ -50,14 +50,14 @@ const bonus = ref(0);
 const message = ref("");
 
 async function load() {
-  offers.value = await apiFetch(`/${tenant}/admin/offers`, {
+  offers.value = await apiFetch(`/t/${tenant}/admin/offers`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 }
 
 async function create() {
   message.value = "";
-  await apiFetch(`/${tenant}/admin/offers`, {
+  await apiFetch(`/t/${tenant}/admin/offers`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

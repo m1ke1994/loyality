@@ -27,7 +27,7 @@ const error = ref("");
 async function login() {
   error.value = "";
   try {
-    const data = await apiFetch(`/${tenant}/auth/admin/login`, {
+    const data = await apiFetch(`/t/${tenant}/auth/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, password: password.value }),

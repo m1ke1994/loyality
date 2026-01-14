@@ -69,7 +69,7 @@ const passwordMessage = ref("");
 
 async function requestEmailCode() {
   emailMessage.value = "";
-  await apiFetch(`/${tenant}/auth/email/request-code`, {
+  await apiFetch(`/t/${tenant}/auth/email/request-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: user?.email }),
@@ -79,7 +79,7 @@ async function requestEmailCode() {
 
 async function confirmEmail() {
   emailMessage.value = "";
-  await apiFetch(`/${tenant}/auth/email/confirm`, {
+  await apiFetch(`/t/${tenant}/auth/email/confirm`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: user?.email, code: emailCode.value }),
@@ -89,7 +89,7 @@ async function confirmEmail() {
 
 async function requestPhone() {
   phoneMessage.value = "";
-  const data = await apiFetch(`/${tenant}/auth/phone/request`, {
+  const data = await apiFetch(`/t/${tenant}/auth/phone/request`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -102,7 +102,7 @@ async function requestPhone() {
 
 async function confirmPhone() {
   phoneMessage.value = "";
-  await apiFetch(`/${tenant}/auth/phone/confirm`, {
+  await apiFetch(`/t/${tenant}/auth/phone/confirm`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -115,7 +115,7 @@ async function confirmPhone() {
 
 async function changePassword() {
   passwordMessage.value = "";
-  await apiFetch(`/${tenant}/client/profile/password`, {
+  await apiFetch(`/t/${tenant}/client/profile/password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -127,7 +127,7 @@ async function changePassword() {
 }
 
 onMounted(async () => {
-  const data = await apiFetch(`/${tenant}/client/me`, {
+  const data = await apiFetch(`/t/${tenant}/client/me`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
   user.value = data;

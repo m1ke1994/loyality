@@ -37,7 +37,7 @@ const receiptSearch = ref("");
 
 async function load() {
   const query = receiptSearch.value ? `?receipt_id=${encodeURIComponent(receiptSearch.value)}` : "";
-  ops.value = await apiFetch(`/${tenant}/admin/operations${query}`, {
+  ops.value = await apiFetch(`/t/${tenant}/admin/operations${query}`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 }

@@ -56,14 +56,14 @@ const gold = ref(1500);
 const message = ref("");
 
 async function load() {
-  rules.value = await apiFetch(`/${tenant}/admin/rules`, {
+  rules.value = await apiFetch(`/t/${tenant}/admin/rules`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 }
 
 async function upsert() {
   message.value = "";
-  await apiFetch(`/${tenant}/admin/rules`, {
+  await apiFetch(`/t/${tenant}/admin/rules`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

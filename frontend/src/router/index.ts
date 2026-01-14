@@ -136,7 +136,7 @@ router.beforeEach(async (to) => {
   let hasToken = Boolean(auth.tokens?.access);
   if (hasToken && !auth.user) {
     try {
-      const me = await apiFetch(`/${tenant}/auth/me`, {
+      const me = await apiFetch(`/t/${tenant}/auth/me`, {
         headers: { Authorization: `Bearer ${auth.tokens?.access}` },
       });
       auth.setAuth({ user: me, tokens: auth.tokens!, tenant });

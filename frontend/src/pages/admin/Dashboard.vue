@@ -36,7 +36,7 @@ const tenant = route.params.tenant as string;
 const stats = ref({ clients: 0, staff: 0, locations: 0, operations: 0 });
 
 onMounted(async () => {
-  stats.value = await apiFetch(`/${tenant}/admin/dashboard`, {
+  stats.value = await apiFetch(`/t/${tenant}/admin/dashboard`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 });

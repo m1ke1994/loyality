@@ -116,13 +116,16 @@ class User(AbstractUser):
 
 class StaffProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="staff_profile", verbose_name="Сотрудник")
+    tenant = models.ForeignKey(
+        Tenant, on_delete=models.CASCADE, related_name="staff_profiles", verbose_name="Tenant"
+    )
     location = models.ForeignKey(
         Location, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Локация"
     )
     is_active = models.BooleanField("Активен", default=True)
 
     def __str__(self):
-        return f"Staff:{self.user.email}"
+        return f"Staff:{self.tenant.slug}:{self.user.email}"
 
     class Meta:
         verbose_name = "Профиль сотрудника"
@@ -150,6 +153,7 @@ class LoyaltyCard(models.Model):
 
 class OneTimeQR(models.Model):
     card = models.ForeignKey(LoyaltyCard, on_delete=models.CASCADE, related_name="qr_tokens", verbose_name="Карта")
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="qr_tokens", verbose_name="Tenant")
     token = models.CharField("Токен", max_length=64, unique=True)
     expires_at = models.DateTimeField("Истекает")
     used_at = models.DateTimeField("Использован", null=True, blank=True)
@@ -158,6 +162,10 @@ class OneTimeQR(models.Model):
     class Meta:
         verbose_name = "Одноразовый QR-код"
         verbose_name_plural = "Одноразовые QR-коды"
+        indexes = [
+            models.Index(fields=["tenant", "token"]),
+            models.Index(fields=["tenant", "created_at"]),
+        ]
 
 
 class LoyaltyRule(models.Model):
@@ -227,6 +235,7 @@ class CouponAssignment(models.Model):
 
     card = models.ForeignKey(LoyaltyCard, on_delete=models.CASCADE, related_name="coupon_assignments", verbose_name="Карта")
     coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name="assignments", verbose_name="Купон")
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="coupon_assignments", verbose_name="Tenant")
     status = models.CharField("Статус", max_length=8, choices=Status.choices, default=Status.UNUSED)
     used_at = models.DateTimeField("Использован", null=True, blank=True)
     created_at = models.DateTimeField("Создан", auto_now_add=True)
@@ -234,6 +243,10 @@ class CouponAssignment(models.Model):
     class Meta:
         verbose_name = "Выданный купон"
         verbose_name_plural = "Выданные купоны"
+        indexes = [
+            models.Index(fields=["tenant", "created_at"]),
+            models.Index(fields=["tenant", "status"]),
+        ]
 
 
 class LoyaltyOperation(models.Model):
@@ -282,6 +295,7 @@ class LoyaltyOperation(models.Model):
 
 class EmailVerificationCode(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_codes", verbose_name="Пользователь")
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="email_codes", verbose_name="Tenant")
     code = models.CharField("Код", max_length=6)
     created_at = models.DateTimeField("Создан", auto_now_add=True)
     expires_at = models.DateTimeField("Истекает")
@@ -293,10 +307,9 @@ class EmailVerificationCode(models.Model):
         verbose_name = "Код подтверждения email"
         verbose_name_plural = "Коды подтверждения email"
         indexes = [
-            models.Index(fields=["user", "is_used"]),
+            models.Index(fields=["tenant", "user", "is_used"]),
+            models.Index(fields=["tenant", "created_at"]),
         ]
-
-
 class AuditLog(models.Model):
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="audit_logs", verbose_name="Арендатор")
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Пользователь")

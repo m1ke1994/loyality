@@ -31,7 +31,7 @@ async function requestOtp() {
   message.value = "";
   otp.value = "";
   try {
-    const data = await apiFetch(`/${tenant}/auth/phone/request`, {
+    const data = await apiFetch(`/t/${tenant}/auth/phone/request`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -49,7 +49,7 @@ async function requestOtp() {
 async function confirmOtp() {
   message.value = "";
   try {
-    await apiFetch(`/${tenant}/auth/phone/confirm`, {
+    await apiFetch(`/t/${tenant}/auth/phone/confirm`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

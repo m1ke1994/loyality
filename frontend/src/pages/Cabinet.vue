@@ -42,11 +42,11 @@ const points = ref(0);
 const ops = ref<any[]>([]);
 
 async function reload() {
-  const me = await apiFetch(`/${tenant}/client/me`, {
+  const me = await apiFetch(`/t/${tenant}/client/me`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
   points.value = me.current_points;
-  ops.value = await apiFetch(`/${tenant}/client/operations`, {
+  ops.value = await apiFetch(`/t/${tenant}/client/operations`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 }

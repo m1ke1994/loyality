@@ -54,7 +54,7 @@ async function load() {
   if (dateFrom.value) params.set("from", dateFrom.value);
   if (dateTo.value) params.set("to", dateTo.value);
   const query = params.toString() ? `?${params.toString()}` : "";
-  ops.value = await apiFetch(`/${tenant}/client/operations${query}`, {
+  ops.value = await apiFetch(`/t/${tenant}/client/operations${query}`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 }

@@ -26,7 +26,7 @@ const logoUrl = ref("");
 const message = ref("");
 
 async function load() {
-  const data = await apiFetch(`/${tenant}/admin/settings`, {
+  const data = await apiFetch(`/t/${tenant}/admin/settings`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
   brandColor.value = data.brand_color;
@@ -36,7 +36,7 @@ async function load() {
 
 async function save() {
   message.value = "";
-  await apiFetch(`/${tenant}/admin/settings`, {
+  await apiFetch(`/t/${tenant}/admin/settings`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

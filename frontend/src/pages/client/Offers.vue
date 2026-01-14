@@ -28,7 +28,7 @@ const tenant = route.params.tenant as string;
 const offers = ref<any[]>([]);
 
 onMounted(async () => {
-  offers.value = await apiFetch(`/${tenant}/client/offers`, {
+  offers.value = await apiFetch(`/t/${tenant}/client/offers`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 });

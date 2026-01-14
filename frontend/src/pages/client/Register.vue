@@ -32,7 +32,7 @@ async function register() {
   error.value = "";
   message.value = "";
   try {
-    await apiFetch(`/${tenant}/auth/register`, {
+    await apiFetch(`/t/${tenant}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, password: password.value, password2: password2.value }),

@@ -40,14 +40,14 @@ const address = ref("");
 const message = ref("");
 
 async function load() {
-  locations.value = await apiFetch(`/${tenant}/admin/locations`, {
+  locations.value = await apiFetch(`/t/${tenant}/admin/locations`, {
     headers: { Authorization: `Bearer ${auth.tokens?.access}` },
   });
 }
 
 async function create() {
   message.value = "";
-  await apiFetch(`/${tenant}/admin/locations`, {
+  await apiFetch(`/t/${tenant}/admin/locations`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

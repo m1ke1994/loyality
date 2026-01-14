@@ -33,7 +33,7 @@ async function verify() {
   message.value = "";
   busy.value = true;
   try {
-    const data = await apiFetch(`/${tenant}/auth/verify-email`, {
+    const data = await apiFetch(`/t/${tenant}/auth/verify-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, code: code.value }),
@@ -52,7 +52,7 @@ async function resend() {
   message.value = "";
   busy.value = true;
   try {
-    await apiFetch(`/${tenant}/auth/resend-code`, {
+    await apiFetch(`/t/${tenant}/auth/resend-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value }),

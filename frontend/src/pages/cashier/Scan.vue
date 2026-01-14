@@ -57,7 +57,7 @@ const card = ref<any>(null);
 async function validate(token: string) {
   error.value = "";
   try {
-    const data = await apiFetch(`/${tenant}/loyalty/qr/validate`, {
+    const data = await apiFetch(`/t/${tenant}/loyalty/qr/validate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -88,7 +88,7 @@ async function redeem() {
 async function refund() {
   message.value = "";
   try {
-    const data = await apiFetch(`/${tenant}/loyalty/points/refund`, {
+    const data = await apiFetch(`/t/${tenant}/loyalty/points/refund`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -113,7 +113,7 @@ async function submit(action: "earn" | "redeem") {
   if (!lastToken.value) return;
   const idempotency = crypto.randomUUID();
   try {
-    const data = await apiFetch(`/${tenant}/loyalty/points/${action}`, {
+    const data = await apiFetch(`/t/${tenant}/loyalty/points/${action}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
