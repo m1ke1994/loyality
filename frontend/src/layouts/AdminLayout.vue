@@ -23,7 +23,7 @@
           <div class="topbar-name">{{ displayName }}</div>
           <div class="topbar-org">{{ organizationLabel }}</div>
         </div>
-        <HeaderMobile class="mobile-only" :title="t('header.adminPortal')" @open="drawerOpen = true" />
+        <HeaderMobile class="mobile-only" :title="organizationLabel" @open="drawerOpen = true" />
       </header>
       <DrawerMenu
         :open="drawerOpen"
@@ -66,7 +66,7 @@ const displayName = computed(() => {
   const full = `${last} ${first}`.trim();
   return full || auth.user?.email || t("header.adminPortal");
 });
-const organizationLabel = computed(() => tenant);
+const organizationLabel = computed(() => auth.user?.tenant_name || tenant);
 const noticeMessage = computed(() =>
   route.query.notice === "forbidden" ? t("errors.forbidden") : ""
 );

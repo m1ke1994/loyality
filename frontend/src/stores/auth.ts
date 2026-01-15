@@ -8,8 +8,10 @@ type User = {
   phone: string;
   phone_verified: boolean;
   email_verified: boolean;
-  role: string;
-};
+  role: string;
+  tenant_name?: string;
+  tenant_slug?: string;
+};
 
 type Tokens = {
   access: string;

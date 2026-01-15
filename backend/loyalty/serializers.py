@@ -76,9 +76,21 @@ class PasswordChangeSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    tenant_name = serializers.CharField(source="tenant.name", read_only=True)
+    tenant_slug = serializers.CharField(source="tenant.slug", read_only=True)
+
     class Meta:
         model = User
-        fields = ("id", "email", "phone", "phone_verified", "email_verified", "role")
+        fields = (
+            "id",
+            "email",
+            "phone",
+            "phone_verified",
+            "email_verified",
+            "role",
+            "tenant_name",
+            "tenant_slug",
+        )
 
 
 class OperationSerializer(serializers.ModelSerializer):
