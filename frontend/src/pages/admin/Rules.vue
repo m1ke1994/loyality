@@ -43,8 +43,8 @@
         </div>
       </div>
       <button @click="upsert">{{ t("buttons.save") }}</button>
-      <p v-if="message" class="small">{{ message }}</p>
-      <p v-if="error" class="small">{{ error }}</p>
+      <p v-if="message" class="notice success">{{ message }}</p>
+      <p v-if="error" class="notice error">{{ error }}</p>
     </div>
   </div>
 </template>

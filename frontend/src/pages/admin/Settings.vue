@@ -14,8 +14,8 @@
       <div class="field-help">Ссылка на логотип компании.</div>
     </div>
     <button @click="save">{{ t("buttons.save") }}</button>
-    <p v-if="message" class="small">{{ message }}</p>
-    <p v-if="error" class="small">{{ error }}</p>
+    <p v-if="message" class="notice success">{{ message }}</p>
+    <p v-if="error" class="notice error">{{ error }}</p>
   </div>
 </template>
 

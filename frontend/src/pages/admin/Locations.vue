@@ -27,8 +27,8 @@
         <div class="field-help">Адрес или ориентир для сотрудников.</div>
       </div>
       <button @click="create">{{ t("buttons.create") }}</button>
-      <p v-if="message" class="small">{{ message }}</p>
-      <p v-if="error" class="small">{{ error }}</p>
+      <p v-if="message" class="notice success">{{ message }}</p>
+      <p v-if="error" class="notice error">{{ error }}</p>
     </div>
     <ConfirmModal
       v-model="showConfirm"
