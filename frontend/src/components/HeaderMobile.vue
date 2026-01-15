@@ -4,7 +4,6 @@
       ☰
     </button>
     <div class="header-mobile-title">
-      <span class="brand-mark">L</span>
       <span>{{ title }}</span>
     </div>
     <div v-if="name" class="header-mobile-subtitle">{{ name }}</div>
