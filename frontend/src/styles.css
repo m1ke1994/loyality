@@ -158,6 +158,17 @@ button.ghost {
   color: var(--text);
 }
 
+button.icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -353,6 +364,12 @@ button.ghost {
   margin-left: auto;
 }
 
+.header-mobile-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
 .burger {
   font-size: 20px;
   line-height: 1;
@@ -416,6 +433,42 @@ button.ghost {
   margin-top: auto;
   display: grid;
   gap: 12px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 40;
+  padding: 16px;
+}
+
+.modal {
+  width: min(420px, 92vw);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 12px;
+}
+
+.modal-title {
+  font-weight: 700;
+}
+
+.modal-body {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .lang-toggle {

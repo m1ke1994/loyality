@@ -3,6 +3,12 @@
     <h2>{{ t("titles.register") }}</h2>
     <div class="grid">
       <div class="field-group">
+        <input v-model="lastName" :placeholder="t('placeholders.lastName')" />
+      </div>
+      <div class="field-group">
+        <input v-model="firstName" :placeholder="t('placeholders.firstName')" />
+      </div>
+      <div class="field-group">
         <input v-model="email" :placeholder="t('placeholders.email')" />
         <div class="field-help">Email для входа и подтверждения.</div>
       </div>
@@ -28,12 +34,14 @@ import { useI18n } from "vue-i18n";
 import { apiFetch } from "../../api";
 
 const route = useRoute();
-const router = useRouter();
-const { t } = useI18n();
-const tenant = route.params.tenant as string;
-const email = ref("");
-const password = ref("");
-const password2 = ref("");
+const router = useRouter();
+const { t } = useI18n();
+const tenant = route.params.tenant as string;
+const firstName = ref("");
+const lastName = ref("");
+const email = ref("");
+const password = ref("");
+const password2 = ref("");
 const message = ref("");
 const error = ref("");
 
@@ -41,11 +49,17 @@ async function register() {
   error.value = "";
   message.value = "";
   try {
-    await apiFetch(`/t/${tenant}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.value, password: password.value, password2: password2.value }),
-    });
+    await apiFetch(`/t/${tenant}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        first_name: firstName.value,
+        last_name: lastName.value,
+        email: email.value,
+        password: password.value,
+        password2: password2.value,
+      }),
+    });
     message.value = t("messages.verificationCodeSent");
     router.push({ path: `/t/${tenant}/verify-email`, query: { email: email.value } });
   } catch (err: any) {

@@ -15,6 +15,8 @@ from .models import (
 
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
     password = serializers.CharField(min_length=8)
     password2 = serializers.CharField(min_length=8)
 
@@ -83,6 +85,8 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             "id",
+            "first_name",
+            "last_name",
             "email",
             "phone",
             "phone_verified",
@@ -196,6 +200,8 @@ class OrganizationSettingsSerializer(serializers.ModelSerializer):
 
 class StaffCreateSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
     password = serializers.CharField(min_length=8)
     role = serializers.ChoiceField(choices=["CASHIER", "ADMIN"])
     location_id = serializers.IntegerField(required=False)

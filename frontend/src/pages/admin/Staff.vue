@@ -4,20 +4,37 @@
       <h2>{{ t("titles.staff") }}</h2>
       <div v-if="staff.length === 0" class="small">{{ t("empty.staff") }}</div>
       <div v-else class="list">
-        <div v-for="member in staff" :key="member.id" class="list-item">
-          <div>
-            <div>{{ member.email }}</div>
-            <div class="small">{{ member.role }}</div>
-          </div>
-          <div>
-            <div>{{ member.location }}</div>
-            <div class="small">{{ member.active ? t("labels.active") : t("labels.disabled") }}</div>
-          </div>
-        </div>
+        <div v-for="member in staff" :key="member.id" class="list-item">
+          <div>
+            <div>{{ member.email }}</div>
+            <div class="small">{{ member.role }}</div>
+          </div>
+          <div>
+            <div>{{ member.location }}</div>
+            <div class="small">{{ member.active ? t("labels.active") : t("labels.disabled") }}</div>
+          </div>
+          <div class="list-actions">
+            <div class="small">#{{ member.id }}</div>
+            <button
+              class="ghost icon-button"
+              :disabled="isSelf(member.id)"
+              @click="remove(member.id)"
+              aria-label="delete"
+            >
+              ×
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="panel grid">
+    <div class="panel grid">
       <h3>{{ t("sections.addStaff") }}</h3>
+      <div class="field-group">
+        <input v-model="lastName" :placeholder="t('placeholders.lastName')" />
+      </div>
+      <div class="field-group">
+        <input v-model="firstName" :placeholder="t('placeholders.firstName')" />
+      </div>
       <div class="field-group">
         <input v-model="email" :placeholder="t('placeholders.email')" />
         <div class="field-help">Email нового сотрудника.</div>
@@ -45,30 +62,43 @@
         </select>
         <div class="field-help">Привязка сотрудника к точке (необязательно).</div>
       </div>
-      <button @click="create">{{ t("buttons.create") }}</button>
-      <p class="small">{{ message }}</p>
-    </div>
-  </div>
-</template>
+      <button @click="create">{{ t("buttons.create") }}</button>
+      <p class="small">{{ message }}</p>
+    </div>
+    <ConfirmModal
+      v-model="showConfirm"
+      :title="t('buttons.confirm')"
+      :message="t('messages.confirmDelete')"
+      :confirm-text="t('common.yes')"
+      :cancel-text="t('common.no')"
+      @confirm="confirmRemove"
+    />
+  </div>
+</template>
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
-import { useI18n } from "vue-i18n";
-import { apiFetch } from "../../api";
-import { useAuthStore } from "../../stores/auth";
+import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { apiFetch } from "../../api";
+import { useAuthStore } from "../../stores/auth";
+import ConfirmModal from "../../components/ConfirmModal.vue";
 
 const route = useRoute();
 const { t } = useI18n();
 const auth = useAuthStore();
 const tenant = route.params.tenant as string;
 const staff = ref<any[]>([]);
-const locations = ref<any[]>([]);
-const email = ref("");
-const password = ref("");
-const role = ref("CASHIER");
-const locationId = ref<number | null>(null);
-const message = ref("");
+const locations = ref<any[]>([]);
+const email = ref("");
+const firstName = ref("");
+const lastName = ref("");
+const password = ref("");
+const role = ref("CASHIER");
+const locationId = ref<number | null>(null);
+const message = ref("");
+const showConfirm = ref(false);
+const pendingId = ref<number | null>(null);
 
 async function load() {
   staff.value = await apiFetch(`/t/${tenant}/admin/staff`, {
@@ -79,26 +109,55 @@ async function load() {
   });
 }
 
-async function create() {
+async function create() {
   message.value = "";
   await apiFetch(`/t/${tenant}/admin/staff`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.tokens?.access}`,
-    },
-    body: JSON.stringify({
-      email: email.value,
-      password: password.value,
-      role: role.value,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${auth.tokens?.access}`,
+    },
+    body: JSON.stringify({
+      first_name: firstName.value,
+      last_name: lastName.value,
+      email: email.value,
+      password: password.value,
+      role: role.value,
       location_id: locationId.value,
     }),
   });
-  message.value = t("messages.created");
-  await load();
-}
+  message.value = t("messages.created");
+  await load();
+}
+
+function isSelf(id: number) {
+  return id === auth.user?.id;
+}
+
+function remove(id: number) {
+  if (isSelf(id)) {
+    return;
+  }
+  pendingId.value = id;
+  showConfirm.value = true;
+}
+
+async function confirmRemove() {
+  if (pendingId.value == null) {
+    return;
+  }
+  const id = pendingId.value;
+  pendingId.value = null;
+  message.value = "";
+  await apiFetch(`/t/${tenant}/admin/staff/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+  });
+  message.value = t("messages.deleted");
+  await load();
+}
 
-onMounted(() => {
-  load();
-});
+onMounted(() => {
+  load();
+});
 </script>

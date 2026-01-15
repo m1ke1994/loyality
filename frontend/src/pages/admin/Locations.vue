@@ -1,19 +1,22 @@
 <template>
-  <div class="grid">
+  <div class="grid">
     <div class="panel">
       <h2>{{ t("titles.locations") }}</h2>
       <div v-if="locations.length === 0" class="small">{{ t("empty.locations") }}</div>
-      <div v-else class="list">
-        <div v-for="loc in locations" :key="loc.id" class="list-item">
-          <div>
-            <div>{{ loc.name }}</div>
-            <div class="small">{{ loc.address || "-" }}</div>
-          </div>
-          <div class="small">#{{ loc.id }}</div>
-        </div>
-      </div>
+      <div v-else class="list">
+        <div v-for="loc in locations" :key="loc.id" class="list-item">
+          <div>
+            <div>{{ loc.name }}</div>
+            <div class="small">{{ loc.address || "-" }}</div>
+          </div>
+          <div class="list-actions">
+            <div class="small">#{{ loc.id }}</div>
+            <button class="ghost icon-button" @click="remove(loc.id)" aria-label="delete">×</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="panel grid">
+    <div class="panel grid">
       <h3>{{ t("sections.addLocation") }}</h3>
       <div class="field-group">
         <input v-model="name" :placeholder="t('placeholders.name')" />
@@ -25,25 +28,36 @@
       </div>
       <button @click="create">{{ t("buttons.create") }}</button>
       <p class="small">{{ message }}</p>
-    </div>
-  </div>
-</template>
+    </div>
+    <ConfirmModal
+      v-model="showConfirm"
+      :title="t('buttons.confirm')"
+      :message="t('messages.confirmDelete')"
+      :confirm-text="t('common.yes')"
+      :cancel-text="t('common.no')"
+      @confirm="confirmRemove"
+    />
+  </div>
+</template>
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
-import { useI18n } from "vue-i18n";
-import { apiFetch } from "../../api";
-import { useAuthStore } from "../../stores/auth";
+import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { apiFetch } from "../../api";
+import { useAuthStore } from "../../stores/auth";
+import ConfirmModal from "../../components/ConfirmModal.vue";
 
 const route = useRoute();
 const { t } = useI18n();
 const auth = useAuthStore();
 const tenant = route.params.tenant as string;
-const locations = ref<any[]>([]);
-const name = ref("");
-const address = ref("");
-const message = ref("");
+const locations = ref<any[]>([]);
+const name = ref("");
+const address = ref("");
+const message = ref("");
+const showConfirm = ref(false);
+const pendingId = ref<number | null>(null);
 
 async function load() {
   locations.value = await apiFetch(`/t/${tenant}/admin/locations`, {
@@ -51,8 +65,8 @@ async function load() {
   });
 }
 
-async function create() {
-  message.value = "";
+async function create() {
+  message.value = "";
   await apiFetch(`/t/${tenant}/admin/locations`, {
     method: "POST",
     headers: {
@@ -61,9 +75,29 @@ async function create() {
     },
     body: JSON.stringify({ name: name.value, address: address.value }),
   });
-  message.value = t("messages.created");
-  await load();
-}
+  message.value = t("messages.created");
+  await load();
+}
+
+function remove(id: number) {
+  pendingId.value = id;
+  showConfirm.value = true;
+}
+
+async function confirmRemove() {
+  if (pendingId.value == null) {
+    return;
+  }
+  const id = pendingId.value;
+  pendingId.value = null;
+  message.value = "";
+  await apiFetch(`/t/${tenant}/admin/locations/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+  });
+  message.value = t("messages.deleted");
+  await load();
+}
 
 onMounted(() => {
   load();

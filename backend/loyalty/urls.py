@@ -62,9 +62,12 @@ urlpatterns = [
     path("t/<slug:tenant_slug>/admin/dashboard", AdminDashboardView.as_view()),
     path("t/<slug:tenant_slug>/admin/customers", AdminCustomersView.as_view()),
     path("t/<slug:tenant_slug>/admin/staff", AdminStaffView.as_view()),
+    path("t/<slug:tenant_slug>/admin/staff/<int:user_id>", AdminStaffView.as_view()),
     path("t/<slug:tenant_slug>/admin/locations", AdminLocationsView.as_view()),
+    path("t/<slug:tenant_slug>/admin/locations/<int:location_id>", AdminLocationsView.as_view()),
     path("t/<slug:tenant_slug>/admin/rules", AdminRulesView.as_view()),
     path("t/<slug:tenant_slug>/admin/operations", AdminOperationsView.as_view()),
     path("t/<slug:tenant_slug>/admin/offers", AdminOffersView.as_view()),
+    path("t/<slug:tenant_slug>/admin/offers/<int:offer_id>", AdminOffersView.as_view()),
     path("t/<slug:tenant_slug>/admin/settings", AdminSettingsView.as_view()),
 ]

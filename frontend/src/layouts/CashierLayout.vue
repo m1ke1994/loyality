@@ -17,7 +17,12 @@
           <div class="topbar-name">{{ displayName }}</div>
           <div class="topbar-org">{{ organizationLabel }}</div>
         </div>
-        <HeaderMobile class="mobile-only" :title="organizationLabel" @open="drawerOpen = true" />
+        <HeaderMobile
+          class="mobile-only"
+          :title="organizationLabel"
+          :name="displayName"
+          @open="drawerOpen = true"
+        />
       </header>
       <DrawerMenu
         :open="drawerOpen"

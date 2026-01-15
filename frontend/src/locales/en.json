@@ -69,10 +69,10 @@
     "confirmEmail": "Confirm Email",
     "goToLogin": "Go to Login",
     "confirmPhone": "Confirm Phone",
-    "changePassword": "Change Password",
-    "save": "Save",
-    "create": "Create"
-  },
+    "changePassword": "Change Password",
+    "save": "Save",
+    "create": "Create"
+  },
   "labels": {
     "points": "Points",
     "pointsShort": "pts",
@@ -123,8 +123,10 @@
     "tenantSlug": "tenant slug",
     "qrPayload": "paste qr payload",
     "amount": "amount",
-    "locationId": "location id",
-    "name": "name",
+    "locationId": "location id",
+    "firstName": "first name",
+    "lastName": "last name",
+    "name": "name",
     "address": "address",
     "title": "title",
     "description": "description",
@@ -177,10 +179,11 @@
     "codeResent": "Code resent",
     "otpSent": "OTP sent",
     "phoneVerified": "Phone verified",
-    "passwordChanged": "Password changed",
-    "saved": "Saved",
-    "created": "Created",
-    "refundSuccess": "Refunded: {points} pts. Balance: {balance}",
+    "passwordChanged": "Password changed",
+    "saved": "Saved",
+    "created": "Created",
+    "confirmDelete": "Delete this item?",
+    "refundSuccess": "Refunded: {points} pts. Balance: {balance}",
     "earnSuccess": "OK: {points} pts. Balance: {balance}",
     "qrRefresh": "Refreshes every 5 seconds.",
     "verificationSentTo": "We sent a verification code to {email}.",

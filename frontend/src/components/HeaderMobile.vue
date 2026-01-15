@@ -7,6 +7,7 @@
       <span class="brand-mark">L</span>
       <span>{{ title }}</span>
     </div>
+    <div v-if="name" class="header-mobile-subtitle">{{ name }}</div>
   </div>
 </template>
 
@@ -15,6 +16,6 @@ import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
 
-defineProps<{ title: string }>();
+defineProps<{ title: string; name?: string }>();
 defineEmits<{ (e: "open"): void }>();
 </script>

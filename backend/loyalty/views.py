@@ -237,6 +237,8 @@ class RegisterView(TenantMixin, APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"].lower()
+        first_name = serializer.validated_data["first_name"]
+        last_name = serializer.validated_data["last_name"]
         password = serializer.validated_data["password"]
         if User.objects.filter(tenant=tenant, email=email).exists():
             return Response({"detail": "EMAIL_EXISTS"}, status=status.HTTP_400_BAD_REQUEST)
@@ -247,6 +249,8 @@ class RegisterView(TenantMixin, APIView):
             role=User.Role.CLIENT,
             is_active=False,
             email_verified=False,
+            first_name=first_name,
+            last_name=last_name,
         )
         LoyaltyCard.objects.create(user=user, tenant=tenant)
         invalidate_email_codes(user)
@@ -729,6 +733,8 @@ class AdminStaffView(TenantMixin, APIView):
         serializer = StaffCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"].lower()
+        first_name = serializer.validated_data["first_name"]
+        last_name = serializer.validated_data["last_name"]
         password = serializer.validated_data["password"]
         role = serializer.validated_data["role"]
         location = location_for_tenant(tenant, serializer.validated_data.get("location_id"))
@@ -741,9 +747,28 @@ class AdminStaffView(TenantMixin, APIView):
             role=role,
             email_verified=True,
             is_active=True,
+            first_name=first_name,
+            last_name=last_name,
         )
         StaffProfile.objects.create(user=user, tenant=tenant, location=location)
         return Response({"detail": "CREATED"}, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, tenant_slug, user_id=None):
+        user_id = user_id or self.kwargs.get("user_id")
+        if not user_id:
+            return Response({"detail": "USER_ID_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
+        if int(user_id) == request.user.id:
+            return Response({"detail": "CANNOT_DELETE_SELF"}, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.filter(
+            tenant=request.user.tenant,
+            id=user_id,
+            role__in=[User.Role.ADMIN, User.Role.CASHIER],
+        ).first()
+        if not user:
+            return Response({"detail": "USER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+        user.delete()
+        audit_log(request.user.tenant, request.user, "staff_delete", {"user_id": user_id})
+        return Response({"detail": "DELETED"})
 
 
 class AdminLocationsView(TenantMixin, APIView):
@@ -758,6 +783,17 @@ class AdminLocationsView(TenantMixin, APIView):
         serializer.is_valid(raise_exception=True)
         location = Location.objects.create(tenant=request.user.tenant, **serializer.validated_data)
         return Response(LocationSerializer(location).data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, tenant_slug, location_id=None):
+        location_id = location_id or self.kwargs.get("location_id")
+        if not location_id:
+            return Response({"detail": "LOCATION_ID_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
+        location = Location.objects.filter(tenant=request.user.tenant, id=location_id).first()
+        if not location:
+            return Response({"detail": "LOCATION_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+        location.delete()
+        audit_log(request.user.tenant, request.user, "location_delete", {"location_id": location_id})
+        return Response({"detail": "DELETED"})
 
 
 class AdminRulesView(TenantMixin, APIView):
@@ -839,6 +875,17 @@ class AdminOffersView(TenantMixin, APIView):
             ]
             OfferTarget.objects.bulk_create(targets, ignore_conflicts=True)
         return Response(OfferSerializer(offer).data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, tenant_slug, offer_id=None):
+        offer_id = offer_id or self.kwargs.get("offer_id")
+        if not offer_id:
+            return Response({"detail": "OFFER_ID_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
+        offer = Offer.objects.filter(tenant=request.user.tenant, id=offer_id).first()
+        if not offer:
+            return Response({"detail": "OFFER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+        offer.delete()
+        audit_log(request.user.tenant, request.user, "offer_delete", {"offer_id": offer_id})
+        return Response({"detail": "DELETED"})
 
 
 class AdminSettingsView(TenantMixin, APIView):

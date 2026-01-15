@@ -12,7 +12,10 @@
               {{ offer.applies_to_all ? "Все клиенты" : `Выбрано клиентов: ${offer.target_ids?.length || 0}` }}
             </div>
           </div>
-          <div class="badge">{{ offer.type }}</div>
+          <div class="list-actions">
+            <div class="badge">{{ offer.type }}</div>
+            <button class="ghost icon-button" @click="remove(offer.id)" aria-label="delete">×</button>
+          </div>
         </div>
       </div>
     </div>
@@ -62,6 +65,14 @@
       <button @click="create">{{ t("buttons.create") }}</button>
       <p class="small">{{ message }}</p>
     </div>
+    <ConfirmModal
+      v-model="showConfirm"
+      :title="t('buttons.confirm')"
+      :message="t('messages.confirmDelete')"
+      :confirm-text="t('common.yes')"
+      :cancel-text="t('common.no')"
+      @confirm="confirmRemove"
+    />
   </div>
 </template>
 
@@ -71,6 +82,7 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { apiFetch } from "../../api";
 import { useAuthStore } from "../../stores/auth";
+import ConfirmModal from "../../components/ConfirmModal.vue";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -86,6 +98,8 @@ const targetMode = ref("all");
 const customers = ref<any[]>([]);
 const selectedClientIds = ref<number[]>([]);
 const message = ref("");
+const showConfirm = ref(false);
+const pendingId = ref<number | null>(null);
 
 async function load() {
   offers.value = await apiFetch(`/t/${tenant}/admin/offers`, {
@@ -119,6 +133,26 @@ async function create() {
     }),
   });
   message.value = t("messages.created");
+  await load();
+}
+
+function remove(id: number) {
+  pendingId.value = id;
+  showConfirm.value = true;
+}
+
+async function confirmRemove() {
+  if (pendingId.value == null) {
+    return;
+  }
+  const id = pendingId.value;
+  pendingId.value = null;
+  message.value = "";
+  await apiFetch(`/t/${tenant}/admin/offers/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+  });
+  message.value = t("messages.deleted");
   await load();
 }
 
