@@ -190,14 +190,21 @@
     "noData": "No data yet.",
     "addLocationsFirst": "Add locations first in the \"Locations\" section."
   },
-  "rules": {
-    "earnLabel": "Earn: {percent}%",
-    "minLabel": "Min: {amount}",
-    "locationLabel": "Location: {location}",
-    "tenant": "Tenant",
-    "help": "Rule defines points accrual for a specific location. If no location is selected, it applies to the whole organization.",
-    "defaultLocation": "Default (all organization)"
-  },
+  "rules": {
+    "earnLabel": "Earn: {percent}%",
+    "minLabel": "Min: {amount}",
+    "allClients": "All clients",
+    "selectedClients": "Selected clients: {count}",
+    "selectClients": "Select clients",
+    "targetingLabel": "Rule targeting",
+    "helpEarnPercent": "Percent of purchase amount credited as points.",
+    "helpMinAmount": "Minimum purchase amount to earn points.",
+    "helpTargeting": "Choose who the rule applies to.",
+    "locationLabel": "Location: {location}",
+    "tenant": "Tenant",
+    "help": "Rule defines points accrual for a specific location. If no location is selected, it applies to the whole organization.",
+    "defaultLocation": "Default (all organization)"
+  },
   "empty": {
     "cabinet": "No operations yet.",
     "offers": "No offers yet.",

@@ -822,14 +822,39 @@ class AdminRulesView(TenantMixin, APIView):
         data["applies_to_all"] = applies_to_all
         location = data.get("location")
         if applies_to_all:
-            rule, _ = LoyaltyRule.objects.update_or_create(
+            rule = (
+                LoyaltyRule.objects.filter(
+                    tenant=request.user.tenant,
+                    location=location,
+                    applies_to_all=True,
+                )
+                .order_by("-id")
+                .first()
+            )
+            if rule:
+                for field, value in data.items():
+                    setattr(rule, field, value)
+                rule.save()
+            else:
+                rule = LoyaltyRule.objects.create(tenant=request.user.tenant, **data)
+            LoyaltyRule.objects.filter(
                 tenant=request.user.tenant,
                 location=location,
                 applies_to_all=True,
-                defaults=data,
-            )
+            ).exclude(id=rule.id).delete()
             RuleTarget.objects.filter(rule=rule).delete()
         else:
+            if client_ids:
+                existing_rules = LoyaltyRule.objects.filter(
+                    tenant=request.user.tenant,
+                    location=location,
+                    applies_to_all=False,
+                    targets__user_id__in=client_ids,
+                ).distinct()
+                RuleTarget.objects.filter(rule__in=existing_rules, user_id__in=client_ids).delete()
+                for existing in existing_rules:
+                    if not RuleTarget.objects.filter(rule=existing).exists():
+                        existing.delete()
             rule = LoyaltyRule.objects.create(tenant=request.user.tenant, **data)
             clients = User.objects.filter(
                 tenant=request.user.tenant,
@@ -842,6 +867,17 @@ class AdminRulesView(TenantMixin, APIView):
             ]
             RuleTarget.objects.bulk_create(targets, ignore_conflicts=True)
         return Response(LoyaltyRuleSerializer(rule).data)
+
+    def delete(self, request, tenant_slug, rule_id=None):
+        rule_id = rule_id or self.kwargs.get("rule_id")
+        if not rule_id:
+            return Response({"detail": "RULE_ID_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
+        rule = LoyaltyRule.objects.filter(tenant=request.user.tenant, id=rule_id).first()
+        if not rule:
+            return Response({"detail": "RULE_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+        rule.delete()
+        audit_log(request.user.tenant, request.user, "rule_delete", {"rule_id": rule_id})
+        return Response({"detail": "DELETED"})
 
 
 class AdminOperationsView(TenantMixin, APIView):
