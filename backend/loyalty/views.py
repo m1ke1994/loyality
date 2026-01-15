@@ -32,6 +32,7 @@ from .models import (
     CouponAssignment,
     LoyaltyOperation,
     EmailVerificationCode,
+    OneTimeCode,
     AuditLog,
 )
 from .serializers import (
@@ -41,6 +42,8 @@ from .serializers import (
     EmailConfirmSerializer,
     PhoneRequestSerializer,
     PhoneConfirmSerializer,
+    TelegramStartSerializer,
+    TelegramVerifySerializer,
     QRValidateSerializer,
     PointsSerializer,
     RefundSerializer,
@@ -57,6 +60,14 @@ from .serializers import (
     StaffCreateSerializer,
 )
 from .permissions import IsTenantMember, IsClient, IsCashier, IsAdmin
+from .telegram_auth import (
+    cache_tenant_slug,
+    get_cached_tenant_slug,
+    hash_otp,
+    issue_telegram_code,
+    normalize_phone,
+    send_telegram_message,
+)
 
 
 def issue_tokens(user: User):
@@ -438,6 +449,167 @@ class PhoneConfirmView(TenantMixin, APIView):
         request.user.otp_expires_at = None
         request.user.save()
         return Response({"detail": "PHONE_VERIFIED"})
+
+
+class TelegramStartView(TenantMixin, APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, tenant_slug):
+        serializer = TelegramStartSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tenant = self.get_tenant()
+        phone = normalize_phone(serializer.validated_data["phone"])
+        if not phone:
+            return Response({"detail": "PHONE_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
+        rate_key = f"rl:telegram:start:{tenant.id}:{phone}"
+        if rate_limited(rate_key, settings.TELEGRAM_CODE_RATE_LIMIT_PER_HOUR):
+            return Response({"detail": "RATE_LIMIT"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        return Response({"detail": "OK", "expires_in": settings.OTP_TTL_SECONDS})
+
+
+class TelegramVerifyView(TenantMixin, APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, tenant_slug):
+        serializer = TelegramVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tenant = self.get_tenant()
+        phone = normalize_phone(serializer.validated_data["phone"])
+        if not phone:
+            return Response({"detail": "PHONE_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
+        code = serializer.validated_data["code"]
+        rate_key = f"rl:telegram:verify:{tenant.id}:{phone}"
+        if rate_limited(rate_key, settings.TELEGRAM_VERIFY_RATE_LIMIT_PER_HOUR):
+            return Response({"detail": "RATE_LIMIT"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        now = timezone.now()
+        record = (
+            OneTimeCode.objects.filter(
+                tenant=tenant,
+                purpose=OneTimeCode.Purpose.TELEGRAM_PHONE_LOGIN,
+                recipient=phone,
+                consumed_at__isnull=True,
+                expires_at__gte=now,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+        if not record:
+            return Response({"detail": "CODE_INVALID"}, status=status.HTTP_400_BAD_REQUEST)
+        if record.attempts >= settings.OTP_MAX_ATTEMPTS:
+            record.consumed_at = now
+            record.save(update_fields=["consumed_at"])
+            return Response({"detail": "CODE_ATTEMPTS_EXCEEDED"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        if record.code_hash != hash_otp(code, record.purpose, phone):
+            record.attempts += 1
+            if record.attempts >= settings.OTP_MAX_ATTEMPTS:
+                record.consumed_at = now
+                record.save(update_fields=["attempts", "consumed_at"])
+                return Response({"detail": "CODE_ATTEMPTS_EXCEEDED"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+            record.save(update_fields=["attempts"])
+            return Response({"detail": "CODE_INVALID"}, status=status.HTTP_400_BAD_REQUEST)
+
+        record.consumed_at = now
+        record.save(update_fields=["consumed_at"])
+
+        user = User.objects.filter(tenant=tenant, phone=phone).first()
+        if user and user.role != User.Role.CLIENT:
+            return Response({"detail": "ROLE_NOT_ALLOWED"}, status=status.HTTP_403_FORBIDDEN)
+        if not user:
+            email_base = f"phone_{phone.strip('+')}@{tenant.slug}.local"
+            email = email_base
+            counter = 1
+            while User.objects.filter(tenant=tenant, email=email).exists():
+                email = f"phone_{phone.strip('+')}_{counter}@{tenant.slug}.local"
+                counter += 1
+            user = User.objects.create_user(
+                email=email,
+                password=None,
+                tenant=tenant,
+                role=User.Role.CLIENT,
+                is_active=True,
+                email_verified=False,
+                phone=phone,
+                phone_verified=True,
+            )
+            LoyaltyCard.objects.create(user=user, tenant=tenant)
+        else:
+            user.phone = phone
+            user.phone_verified = True
+            user.save(update_fields=["phone", "phone_verified"])
+
+        tokens = issue_tokens(user)
+        audit_log(tenant, user, "login_telegram", {"phone": phone})
+        return Response({"tokens": tokens, "user": UserSerializer(user).data})
+
+
+class TelegramWebhookView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+        if not settings.TELEGRAM_WEBHOOK_SECRET or secret != settings.TELEGRAM_WEBHOOK_SECRET:
+            return Response({"detail": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        payload = request.data or {}
+        message = payload.get("message") or {}
+        chat = message.get("chat") or {}
+        chat_id = chat.get("id")
+        if not chat_id:
+            return Response({"detail": "OK"})
+
+        text = message.get("text", "")
+        if text.startswith("/start"):
+            parts = text.split(maxsplit=1)
+            if len(parts) > 1:
+                cache_tenant_slug(chat_id, parts[1].strip())
+            return Response({"detail": "OK"})
+
+        contact = message.get("contact")
+        if not contact:
+            return Response({"detail": "OK"})
+
+        phone = contact.get("phone_number", "")
+        normalized = normalize_phone(phone)
+        if not normalized:
+            try:
+                send_telegram_message(chat_id, "Invalid phone number.")
+            except RuntimeError:
+                pass
+            return Response({"detail": "OK"})
+        tenant_slug = get_cached_tenant_slug(chat_id)
+        if not tenant_slug:
+            try:
+                send_telegram_message(chat_id, "Open the bot from your tenant link and try again.")
+            except RuntimeError:
+                pass
+            return Response({"detail": "OK"})
+
+        tenant = Tenant.objects.filter(slug=tenant_slug).first()
+        if not tenant:
+            try:
+                send_telegram_message(chat_id, "Tenant not found. Please check the link.")
+            except RuntimeError:
+                pass
+            return Response({"detail": "OK"})
+
+        rate_key_phone = f"rl:telegram:code:{tenant.id}:{normalized}"
+        rate_key_chat = f"rl:telegram:chat:{tenant.id}:{chat_id}"
+        if rate_limited(rate_key_phone, settings.TELEGRAM_CODE_RATE_LIMIT_PER_HOUR) or rate_limited(
+            rate_key_chat, settings.TELEGRAM_CHAT_RATE_LIMIT_PER_HOUR
+        ):
+            try:
+                send_telegram_message(chat_id, "Too many requests. Please try later.")
+            except RuntimeError:
+                pass
+            return Response({"detail": "OK"})
+
+        _, code = issue_telegram_code(tenant, normalized, chat_id=chat_id)
+        try:
+            send_telegram_message(chat_id, f"Your login code: {code}")
+        except RuntimeError:
+            pass
+        return Response({"detail": "OK"})
 
 
 class ClientMeView(TenantMixin, APIView):

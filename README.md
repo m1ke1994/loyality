@@ -47,6 +47,31 @@ EMAIL_FROM=no-reply@yourdomain.com
 ```
 In Docker, update these in `docker-compose.yml` or export them before start.
 
+## Telegram Phone Login (Clients Only)
+Telegram login is an optional second auth method for clients. The bot sends a 6-digit code after the user shares their phone.
+
+Required envs:
+```
+TELEGRAM_BOT_TOKEN=<bot token>
+TELEGRAM_BOT_USERNAME=<bot username>
+TELEGRAM_MODE=polling|webhook
+TELEGRAM_WEBHOOK_SECRET=<secret token>
+TELEGRAM_WEBHOOK_URL=<https://your-domain/api/v1/integrations/telegram/webhook>
+VITE_TELEGRAM_BOT_USERNAME=<bot username for frontend>
+```
+
+### Local (polling)
+1) Set `TELEGRAM_MODE=polling` and `TELEGRAM_BOT_TOKEN`.
+2) Run the bot:
+```
+docker compose --profile telegram up --build
+```
+3) Open client login and use the Telegram flow.
+
+### Production (webhook)
+1) Set `TELEGRAM_MODE=webhook`, `TELEGRAM_WEBHOOK_URL`, `TELEGRAM_WEBHOOK_SECRET`.
+2) Configure the bot webhook to point to the URL above and pass the same secret.
+
 ## Portals
 - Client: `http://localhost:5173/t/demo/login`
 - Cashier: `http://localhost:5173/t/demo/cashier/login`

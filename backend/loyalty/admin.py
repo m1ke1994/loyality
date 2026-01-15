@@ -14,6 +14,7 @@ from .models import (
     CouponAssignment,
     LoyaltyOperation,
     EmailVerificationCode,
+    OneTimeCode,
     AuditLog,
 )
 
@@ -220,6 +221,13 @@ class OrganizationSettingsAdmin(TenantScopedAdmin):
 class EmailVerificationCodeAdmin(TenantScopedAdmin):
     list_display = ("id", "tenant", "user", "code", "is_used", "created_at", "expires_at")
     list_filter = ("tenant", "is_used")
+
+
+@admin.register(OneTimeCode)
+class OneTimeCodeAdmin(TenantScopedAdmin):
+    list_display = ("id", "tenant", "purpose", "recipient", "created_at", "expires_at", "attempts", "consumed_at")
+    list_filter = ("tenant", "purpose")
+    search_fields = ("recipient",)
     search_fields = ("user__email", "code")
 
 

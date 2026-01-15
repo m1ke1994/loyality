@@ -71,7 +71,8 @@
     "confirmPhone": "Confirm Phone",
     "changePassword": "Change Password",
     "save": "Save",
-    "create": "Create"
+    "create": "Create",
+    "openTelegram": "Open Telegram bot"
   },
   "labels": {
     "points": "Points",
@@ -112,7 +113,8 @@
     "password": "password",
     "passwordRepeat": "repeat password",
     "emailCode": "email code",
-    "phone": "phone",
+    "phone": "phone",
+    "telegramCode": "6-digit code",
     "phoneCode": "OTP",
     "currentPassword": "current password",
     "newPassword": "new password",
@@ -143,7 +145,7 @@
     "locationOptional": "location id (optional)",
     "locationNone": "no location"
   },
-  "filters": {
+  "filters": {
     "all": "All",
     "earn": "Earn",
     "redeem": "Redeem",
@@ -154,10 +156,14 @@
     "roleCashier": "Cashier",
     "roleAdmin": "Admin",
     "offerBonus": "Bonus",
-    "offerMultiplier": "Multiplier",
-    "offerCoupon": "Coupon"
-  },
-  "home": {
+    "offerMultiplier": "Multiplier",
+    "offerCoupon": "Coupon"
+  },
+  "auth": {
+    "email": "Email",
+    "telegram": "Phone (Telegram)"
+  },
+  "home": {
     "subtitle": "Choose a tenant to enter the client, cashier, or admin portals.",
     "demoTenant": "Demo Tenant",
     "slug": "Slug",
@@ -188,8 +194,16 @@
     "qrRefresh": "Refreshes every 5 seconds.",
     "verificationSentTo": "We sent a verification code to {email}.",
     "noData": "No data yet.",
-    "addLocationsFirst": "Add locations first in the \"Locations\" section."
-  },
+    "addLocationsFirst": "Add locations first in the \"Locations\" section.",
+    "loginEmailHelp": "Email for login and notifications.",
+    "loginPasswordHelp": "Password for your account.",
+    "registerEmailHelp": "Email for login and verification.",
+    "registerPasswordHelp": "Choose a strong password (8+ chars).",
+    "registerPasswordRepeatHelp": "Repeat the password without mistakes.",
+    "telegramPhoneHelp": "Use the same phone number you share in Telegram.",
+    "telegramMissingBot": "Telegram bot is not configured.",
+    "telegramOpened": "Open Telegram and request your code."
+  },
   "rules": {
     "earnLabel": "Earn: {percent}%",
     "minLabel": "Min: {amount}",

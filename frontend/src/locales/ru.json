@@ -1,4 +1,4 @@
-{
+﻿{
   "brand": {
     "client": "Карта лояльности",
     "saas": "Loyalty SaaS",
@@ -71,7 +71,8 @@
     "confirmPhone": "Подтвердить телефон",
     "changePassword": "Сменить пароль",
     "save": "Сохранить",
-    "create": "Создать"
+    "create": "Создать",
+    "openTelegram": "Перейти в Telegram-бота"
   },
   "labels": {
     "points": "Баллы",
@@ -113,6 +114,7 @@
     "passwordRepeat": "повторите пароль",
     "emailCode": "код email",
     "phone": "телефон",
+    "telegramCode": "6-значный код",
     "phoneCode": "OTP",
     "currentPassword": "текущий пароль",
     "newPassword": "новый пароль",
@@ -157,6 +159,10 @@
     "offerMultiplier": "Множитель",
     "offerCoupon": "Купон"
   },
+  "auth": {
+    "email": "Email",
+    "telegram": "Телефон (Telegram)"
+  },
   "home": {
     "subtitle": "Единая система лояльности для бизнеса и клиентов, доступная для любого масштаба.",
     "demoTenant": "Демо организация",
@@ -188,7 +194,15 @@
     "qrRefresh": "QR-код обновляется каждые 5 секунд.",
     "verificationSentTo": "Код подтверждения отправлен на {email}.",
     "noData": "Нет данных.",
-    "addLocationsFirst": "Сначала добавьте точки в разделе «Точки»."
+    "addLocationsFirst": "Сначала добавьте точки в разделе «Точки».",
+    "loginEmailHelp": "Email для входа и уведомлений.",
+    "loginPasswordHelp": "Пароль от вашего аккаунта.",
+    "registerEmailHelp": "Email для входа и подтверждения.",
+    "registerPasswordHelp": "Придумайте пароль от 8 символов.",
+    "registerPasswordRepeatHelp": "Повторите пароль без ошибок.",
+    "telegramPhoneHelp": "Введите тот же номер, который отправите в Telegram.",
+    "telegramMissingBot": "Telegram-бот не настроен.",
+    "telegramOpened": "Откройте Telegram и получите код."
   },
   "rules": {
     "earnLabel": "Начисление: {percent}%",

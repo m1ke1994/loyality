@@ -48,6 +48,15 @@ class PhoneConfirmSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=6)
 
 
+class TelegramStartSerializer(serializers.Serializer):
+    phone = serializers.CharField(max_length=32)
+
+
+class TelegramVerifySerializer(serializers.Serializer):
+    phone = serializers.CharField(max_length=32)
+    code = serializers.RegexField(regex=r"^\d{6}$")
+
+
 class QRValidateSerializer(serializers.Serializer):
     qr_payload = serializers.CharField()
 

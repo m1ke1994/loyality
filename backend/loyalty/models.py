@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -104,6 +105,11 @@ class User(AbstractUser):
         verbose_name_plural = "Пользователи"
         constraints = [
             models.UniqueConstraint(fields=["tenant", "email"], name="uniq_user_email_per_tenant"),
+            models.UniqueConstraint(
+                fields=["tenant", "phone"],
+                name="uniq_user_phone_per_tenant",
+                condition=~Q(phone=""),
+            ),
         ]
 
     def otp_is_valid(self, code_hash: str) -> bool:
@@ -364,6 +370,31 @@ class EmailVerificationCode(models.Model):
         indexes = [
             models.Index(fields=["tenant", "user", "is_used"]),
             models.Index(fields=["tenant", "created_at"]),
+        ]
+
+
+class OneTimeCode(models.Model):
+    class Purpose(models.TextChoices):
+        EMAIL_LOGIN = "EMAIL_LOGIN", "Email login"
+        TELEGRAM_PHONE_LOGIN = "TELEGRAM_PHONE_LOGIN", "Telegram phone login"
+
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="otp_codes", verbose_name="Tenant")
+    purpose = models.CharField(max_length=32, choices=Purpose.choices)
+    recipient = models.CharField(max_length=255)
+    code_hash = models.CharField(max_length=128)
+    chat_id = models.BigIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    attempts = models.IntegerField(default=0)
+    consumed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "OTP code"
+        verbose_name_plural = "OTP codes"
+        indexes = [
+            models.Index(fields=["tenant", "purpose", "recipient"]),
+            models.Index(fields=["tenant", "created_at"]),
+            models.Index(fields=["tenant", "chat_id"]),
         ]
 class AuditLog(models.Model):
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="audit_logs", verbose_name="Арендатор")
