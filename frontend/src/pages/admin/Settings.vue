@@ -13,8 +13,9 @@
       <input v-model="logoUrl" :placeholder="t('placeholders.logoUrl')" />
       <div class="field-help">Ссылка на логотип компании.</div>
     </div>
-    <button @click="save">{{ t("buttons.save") }}</button>
-    <p class="small">{{ message }}</p>
+    <button @click="save">{{ t("buttons.save") }}</button>
+    <p v-if="message" class="small">{{ message }}</p>
+    <p v-if="error" class="small">{{ error }}</p>
   </div>
 </template>
 
@@ -29,10 +30,34 @@ const route = useRoute();
 const { t } = useI18n();
 const auth = useAuthStore();
 const tenant = route.params.tenant as string;
-const brandColor = ref("");
-const emailFrom = ref("");
-const logoUrl = ref("");
-const message = ref("");
+const brandColor = ref("");
+const emailFrom = ref("");
+const logoUrl = ref("");
+const message = ref("");
+const error = ref("");
+let messageTimer: number | null = null;
+
+function showMessage(text: string) {
+  message.value = text;
+  error.value = "";
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    message.value = "";
+  }, 3000);
+}
+
+function showError(text: string) {
+  error.value = text;
+  message.value = "";
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    error.value = "";
+  }, 3000);
+}
 
 async function load() {
   const data = await apiFetch(`/t/${tenant}/admin/settings`, {
@@ -43,22 +68,25 @@ async function load() {
   logoUrl.value = data.logo_url;
 }
 
-async function save() {
-  message.value = "";
-  await apiFetch(`/t/${tenant}/admin/settings`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.tokens?.access}`,
-    },
-    body: JSON.stringify({
-      brand_color: brandColor.value,
-      email_from: emailFrom.value,
-      logo_url: logoUrl.value,
-    }),
-  });
-  message.value = t("messages.saved");
-}
+async function save() {
+  try {
+    await apiFetch(`/t/${tenant}/admin/settings`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.tokens?.access}`,
+      },
+      body: JSON.stringify({
+        brand_color: brandColor.value,
+        email_from: emailFrom.value,
+        logo_url: logoUrl.value,
+      }),
+    });
+    showMessage(t("messages.saved"));
+  } catch (err: any) {
+    showError(err.message);
+  }
+}
 
 onMounted(() => {
   load();

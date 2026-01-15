@@ -14,7 +14,7 @@
           </div>
           <div class="list-actions">
             <div class="badge">{{ offer.type }}</div>
-            <button class="ghost icon-button" @click="remove(offer.id)" aria-label="delete">×</button>
+            <button class="ghost icon-button" @click="remove(offer.id)" aria-label="delete">x</button>
           </div>
         </div>
       </div>
@@ -63,7 +63,8 @@
         </div>
       </div>
       <button @click="create">{{ t("buttons.create") }}</button>
-      <p class="small">{{ message }}</p>
+      <p v-if="message" class="small">{{ message }}</p>
+      <p v-if="error" class="small">{{ error }}</p>
     </div>
     <ConfirmModal
       v-model="showConfirm"
@@ -98,8 +99,42 @@ const targetMode = ref("all");
 const customers = ref<any[]>([]);
 const selectedClientIds = ref<number[]>([]);
 const message = ref("");
+const error = ref("");
 const showConfirm = ref(false);
 const pendingId = ref<number | null>(null);
+let messageTimer: number | null = null;
+
+function showMessage(text: string) {
+  message.value = text;
+  error.value = "";
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    message.value = "";
+  }, 3000);
+}
+
+function showError(text: string) {
+  error.value = text;
+  message.value = "";
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    error.value = "";
+  }, 3000);
+}
+
+function resetForm() {
+  title.value = "";
+  description.value = "";
+  type.value = "BONUS";
+  multiplier.value = 1;
+  bonus.value = 0;
+  targetMode.value = "all";
+  selectedClientIds.value = [];
+}
 
 async function load() {
   offers.value = await apiFetch(`/t/${tenant}/admin/offers`, {
@@ -114,26 +149,30 @@ async function loadCustomers() {
 }
 
 async function create() {
-  message.value = "";
-  await apiFetch(`/t/${tenant}/admin/offers`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.tokens?.access}`,
-    },
-    body: JSON.stringify({
-      title: title.value,
-      description: description.value,
-      type: type.value,
-      multiplier: multiplier.value,
-      bonus_points: bonus.value,
-      is_active: true,
-      applies_to_all: targetMode.value === "all",
-      client_ids: targetMode.value === "selected" ? selectedClientIds.value : [],
-    }),
-  });
-  message.value = t("messages.created");
-  await load();
+  try {
+    await apiFetch(`/t/${tenant}/admin/offers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.tokens?.access}`,
+      },
+      body: JSON.stringify({
+        title: title.value,
+        description: description.value,
+        type: type.value,
+        multiplier: multiplier.value,
+        bonus_points: bonus.value,
+        is_active: true,
+        applies_to_all: targetMode.value === "all",
+        client_ids: targetMode.value === "selected" ? selectedClientIds.value : [],
+      }),
+    });
+    showMessage(t("messages.created"));
+    resetForm();
+    await load();
+  } catch (err: any) {
+    showError(err.message);
+  }
 }
 
 function remove(id: number) {
@@ -147,13 +186,16 @@ async function confirmRemove() {
   }
   const id = pendingId.value;
   pendingId.value = null;
-  message.value = "";
-  await apiFetch(`/t/${tenant}/admin/offers/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
-  });
-  message.value = t("messages.deleted");
-  await load();
+  try {
+    await apiFetch(`/t/${tenant}/admin/offers/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+    });
+    showMessage(t("messages.deleted"));
+    await load();
+  } catch (err: any) {
+    showError(err.message);
+  }
 }
 
 onMounted(() => {

@@ -21,7 +21,7 @@
               @click="remove(member.id)"
               aria-label="delete"
             >
-              ×
+              x
             </button>
           </div>
         </div>
@@ -63,7 +63,8 @@
         <div class="field-help">Привязка сотрудника к точке (необязательно).</div>
       </div>
       <button @click="create">{{ t("buttons.create") }}</button>
-      <p class="small">{{ message }}</p>
+      <p v-if="message" class="small">{{ message }}</p>
+      <p v-if="error" class="small">{{ error }}</p>
     </div>
     <ConfirmModal
       v-model="showConfirm"
@@ -97,8 +98,10 @@ const password = ref("");
 const role = ref("CASHIER");
 const locationId = ref<number | null>(null);
 const message = ref("");
+const error = ref("");
 const showConfirm = ref(false);
 const pendingId = ref<number | null>(null);
+let messageTimer: number | null = null;
 
 async function load() {
   staff.value = await apiFetch(`/t/${tenant}/admin/staff`, {
@@ -110,24 +113,28 @@ async function load() {
 }
 
 async function create() {
-  message.value = "";
-  await apiFetch(`/t/${tenant}/admin/staff`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.tokens?.access}`,
-    },
-    body: JSON.stringify({
-      first_name: firstName.value,
-      last_name: lastName.value,
-      email: email.value,
-      password: password.value,
-      role: role.value,
-      location_id: locationId.value,
-    }),
-  });
-  message.value = t("messages.created");
-  await load();
+  try {
+    await apiFetch(`/t/${tenant}/admin/staff`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.tokens?.access}`,
+      },
+      body: JSON.stringify({
+        first_name: firstName.value,
+        last_name: lastName.value,
+        email: email.value,
+        password: password.value,
+        role: role.value,
+        location_id: locationId.value,
+      }),
+    });
+    showMessage(t("messages.created"));
+    resetForm();
+    await load();
+  } catch (err: any) {
+    showError(err.message);
+  }
 }
 
 function isSelf(id: number) {
@@ -148,13 +155,47 @@ async function confirmRemove() {
   }
   const id = pendingId.value;
   pendingId.value = null;
+  try {
+    await apiFetch(`/t/${tenant}/admin/staff/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+    });
+    showMessage(t("messages.deleted"));
+    await load();
+  } catch (err: any) {
+    showError(err.message);
+  }
+}
+
+function showMessage(text: string) {
+  message.value = text;
+  error.value = "";
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    message.value = "";
+  }, 3000);
+}
+
+function showError(text: string) {
+  error.value = text;
   message.value = "";
-  await apiFetch(`/t/${tenant}/admin/staff/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
-  });
-  message.value = t("messages.deleted");
-  await load();
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    error.value = "";
+  }, 3000);
+}
+
+function resetForm() {
+  firstName.value = "";
+  lastName.value = "";
+  email.value = "";
+  password.value = "";
+  role.value = "CASHIER";
+  locationId.value = null;
 }
 
 onMounted(() => {

@@ -43,7 +43,8 @@
         </div>
       </div>
       <button @click="upsert">{{ t("buttons.save") }}</button>
-      <p class="small">{{ message }}</p>
+      <p v-if="message" class="small">{{ message }}</p>
+      <p v-if="error" class="small">{{ error }}</p>
     </div>
   </div>
 </template>
@@ -66,6 +67,37 @@ const minAmount = ref(0);
 const targetMode = ref("all");
 const selectedClientIds = ref<number[]>([]);
 const message = ref("");
+const error = ref("");
+let messageTimer: number | null = null;
+
+function showMessage(text: string) {
+  message.value = text;
+  error.value = "";
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    message.value = "";
+  }, 3000);
+}
+
+function showError(text: string) {
+  error.value = text;
+  message.value = "";
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    error.value = "";
+  }, 3000);
+}
+
+function resetForm() {
+  earnPercent.value = 3;
+  minAmount.value = 0;
+  targetMode.value = "all";
+  selectedClientIds.value = [];
+}
 
 async function load() {
   rules.value = await apiFetch(`/t/${tenant}/admin/rules`, {
@@ -80,27 +112,31 @@ async function loadCustomers() {
 }
 
 async function upsert() {
-  message.value = "";
-  await apiFetch(`/t/${tenant}/admin/rules`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.tokens?.access}`,
-    },
-    body: JSON.stringify({
-      location: null,
-      earn_percent: earnPercent.value,
-      min_amount: minAmount.value,
-      rounding_mode: "FLOOR",
-      bronze_threshold: 0,
-      silver_threshold: 500,
-      gold_threshold: 1500,
-      applies_to_all: targetMode.value === "all",
-      client_ids: targetMode.value === "selected" ? selectedClientIds.value : [],
-    }),
-  });
-  message.value = t("messages.saved");
-  await load();
+  try {
+    await apiFetch(`/t/${tenant}/admin/rules`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.tokens?.access}`,
+      },
+      body: JSON.stringify({
+        location: null,
+        earn_percent: earnPercent.value,
+        min_amount: minAmount.value,
+        rounding_mode: "FLOOR",
+        bronze_threshold: 0,
+        silver_threshold: 500,
+        gold_threshold: 1500,
+        applies_to_all: targetMode.value === "all",
+        client_ids: targetMode.value === "selected" ? selectedClientIds.value : [],
+      }),
+    });
+    showMessage(t("messages.saved"));
+    resetForm();
+    await load();
+  } catch (err: any) {
+    showError(err.message);
+  }
 }
 
 onMounted(() => {

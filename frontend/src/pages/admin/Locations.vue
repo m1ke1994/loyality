@@ -11,7 +11,7 @@
           </div>
           <div class="list-actions">
             <div class="small">#{{ loc.id }}</div>
-            <button class="ghost icon-button" @click="remove(loc.id)" aria-label="delete">×</button>
+            <button class="ghost icon-button" @click="remove(loc.id)" aria-label="delete">x</button>
           </div>
         </div>
       </div>
@@ -26,8 +26,9 @@
         <input v-model="address" :placeholder="t('placeholders.address')" />
         <div class="field-help">Адрес или ориентир для сотрудников.</div>
       </div>
-      <button @click="create">{{ t("buttons.create") }}</button>
-      <p class="small">{{ message }}</p>
+      <button @click="create">{{ t("buttons.create") }}</button>
+      <p v-if="message" class="small">{{ message }}</p>
+      <p v-if="error" class="small">{{ error }}</p>
     </div>
     <ConfirmModal
       v-model="showConfirm"
@@ -56,27 +57,60 @@ const locations = ref<any[]>([]);
 const name = ref("");
 const address = ref("");
 const message = ref("");
+const error = ref("");
 const showConfirm = ref(false);
 const pendingId = ref<number | null>(null);
-
-async function load() {
-  locations.value = await apiFetch(`/t/${tenant}/admin/locations`, {
-    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
-  });
-}
-
-async function create() {
+let messageTimer: number | null = null;
+
+function showMessage(text: string) {
+  message.value = text;
+  error.value = "";
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    message.value = "";
+  }, 3000);
+}
+
+function showError(text: string) {
+  error.value = text;
   message.value = "";
-  await apiFetch(`/t/${tenant}/admin/locations`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.tokens?.access}`,
-    },
-    body: JSON.stringify({ name: name.value, address: address.value }),
-  });
-  message.value = t("messages.created");
-  await load();
+  if (messageTimer) {
+    window.clearTimeout(messageTimer);
+  }
+  messageTimer = window.setTimeout(() => {
+    error.value = "";
+  }, 3000);
+}
+
+function resetForm() {
+  name.value = "";
+  address.value = "";
+}
+
+async function load() {
+  locations.value = await apiFetch(`/t/${tenant}/admin/locations`, {
+    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+  });
+}
+
+async function create() {
+  try {
+    await apiFetch(`/t/${tenant}/admin/locations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.tokens?.access}`,
+      },
+      body: JSON.stringify({ name: name.value, address: address.value }),
+    });
+    showMessage(t("messages.created"));
+    resetForm();
+    await load();
+  } catch (err: any) {
+    showError(err.message);
+  }
 }
 
 function remove(id: number) {
@@ -90,16 +124,20 @@ async function confirmRemove() {
   }
   const id = pendingId.value;
   pendingId.value = null;
-  message.value = "";
-  await apiFetch(`/t/${tenant}/admin/locations/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
-  });
-  message.value = t("messages.deleted");
-  await load();
+  try {
+    await apiFetch(`/t/${tenant}/admin/locations/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+    });
+    showMessage(t("messages.deleted"));
+    await load();
+  } catch (err: any) {
+    showError(err.message);
+  }
 }
 
 onMounted(() => {
   load();
 });
 </script>
+
