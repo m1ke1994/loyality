@@ -231,6 +231,24 @@ class OfferTarget(models.Model):
         ]
 
 
+class OfferRedemption(models.Model):
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name="redemptions")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="offer_redemptions")
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="offer_redemptions")
+    used_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Offer redemption"
+        verbose_name_plural = "Offer redemptions"
+        constraints = [
+            models.UniqueConstraint(fields=["offer", "user"], name="uniq_offer_redemption"),
+        ]
+        indexes = [
+            models.Index(fields=["tenant", "user"]),
+            models.Index(fields=["tenant", "offer"]),
+        ]
+
+
 class Coupon(models.Model):
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="coupons", verbose_name="Арендатор")
     code = models.CharField("Код", max_length=32)

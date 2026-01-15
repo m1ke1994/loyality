@@ -27,6 +27,7 @@ from .models import (
     LoyaltyRule,
     Offer,
     OfferTarget,
+    OfferRedemption,
     CouponAssignment,
     LoyaltyOperation,
     EmailVerificationCode,
@@ -47,6 +48,7 @@ from .serializers import (
     UserSerializer,
     OperationSerializer,
     OfferSerializer,
+    OfferUseSerializer,
     CouponAssignmentSerializer,
     LocationSerializer,
     LoyaltyRuleSerializer,
@@ -461,7 +463,31 @@ class ClientOffersView(TenantMixin, APIView):
         offers = offers.filter(
             models.Q(applies_to_all=True) | models.Q(targets__user=request.user)
         ).distinct()
-        return Response(OfferSerializer(offers, many=True).data)
+        return Response(OfferSerializer(offers, many=True, context={"user": request.user}).data)
+
+
+class ClientOfferUseView(TenantMixin, APIView):
+    permission_classes = [IsTenantMember, IsClient]
+
+    def post(self, request, tenant_slug):
+        serializer = OfferUseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        offer_id = serializer.validated_data["offer_id"]
+        now = timezone.now()
+        offer = Offer.objects.filter(
+            tenant=request.user.tenant,
+            id=offer_id,
+            is_active=True,
+        ).filter(
+            models.Q(active_from__isnull=True) | models.Q(active_from__lte=now),
+            models.Q(active_to__isnull=True) | models.Q(active_to__gte=now),
+        ).first()
+        if not offer:
+            return Response({"detail": "OFFER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+        if not offer.applies_to_all and not OfferTarget.objects.filter(offer=offer, user=request.user).exists():
+            return Response({"detail": "OFFER_NOT_AVAILABLE"}, status=status.HTTP_403_FORBIDDEN)
+        OfferRedemption.objects.get_or_create(offer=offer, user=request.user, tenant=request.user.tenant)
+        return Response({"detail": "OK"})
 
 
 class ClientCouponsView(TenantMixin, APIView):

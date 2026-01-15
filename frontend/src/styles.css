@@ -185,6 +185,13 @@ button.ghost {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.list-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
 .check-row {
   display: flex;
   align-items: center;

@@ -4,6 +4,7 @@ from .models import (
     LoyaltyOperation,
     Offer,
     OfferTarget,
+    OfferRedemption,
     CouponAssignment,
     Location,
     LoyaltyRule,
@@ -100,6 +101,7 @@ class OperationSerializer(serializers.ModelSerializer):
 class OfferSerializer(serializers.ModelSerializer):
     client_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
     target_ids = serializers.SerializerMethodField(read_only=True)
+    is_used = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Offer
@@ -116,10 +118,21 @@ class OfferSerializer(serializers.ModelSerializer):
             "applies_to_all",
             "target_ids",
             "client_ids",
+            "is_used",
         )
 
     def get_target_ids(self, obj):
         return list(OfferTarget.objects.filter(offer=obj).values_list("user_id", flat=True))
+
+    def get_is_used(self, obj):
+        user = self.context.get("user")
+        if not user or not getattr(user, "id", None):
+            return False
+        return OfferRedemption.objects.filter(offer=obj, user=user).exists()
+
+
+class OfferUseSerializer(serializers.Serializer):
+    offer_id = serializers.IntegerField()
 
 
 class CouponAssignmentSerializer(serializers.ModelSerializer):
