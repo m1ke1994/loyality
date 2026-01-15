@@ -1,25 +1,28 @@
 <template>
   <div class="layout">
-    <aside class="sidebar desktop-only">
-      <div class="sidebar-brand" @click="goHome">{{ t("brand.client") }}</div>
-      <nav class="sidebar-nav">
-        <router-link :to="`/t/${tenant}/cabinet`">{{ t("menu.cabinet") }}</router-link>
-        <router-link :to="`/t/${tenant}/qr`">{{ t("menu.qr") }}</router-link>
-        <router-link :to="`/t/${tenant}/offers`">{{ t("menu.offers") }}</router-link>
-        <router-link :to="`/t/${tenant}/history`">{{ t("menu.history") }}</router-link>
-        <router-link :to="`/t/${tenant}/profile`">{{ t("menu.profile") }}</router-link>
-      </nav>
-    </aside>
+    <aside class="sidebar desktop-only">
+      <div class="sidebar-brand" @click="goHome">{{ t("brand.client") }}</div>
+      <nav class="sidebar-nav">
+        <router-link :to="`/t/${tenant}/cabinet`">{{ t("menu.cabinet") }}</router-link>
+        <router-link :to="`/t/${tenant}/qr`">{{ t("menu.qr") }}</router-link>
+        <router-link :to="`/t/${tenant}/offers`">{{ t("menu.offers") }}</router-link>
+        <router-link :to="`/t/${tenant}/history`">{{ t("menu.history") }}</router-link>
+        <router-link :to="`/t/${tenant}/profile`">{{ t("menu.profile") }}</router-link>
+      </nav>
+      <div class="sidebar-actions">
+        <LanguageToggle />
+        <button class="ghost" @click="toggleTheme">{{ themeLabel }}</button>
+        <button class="ghost" v-if="isAuthenticated" @click="logout">{{ t("buttons.logout") }}</button>
+      </div>
+    </aside>
     <div class="content">
-      <header class="topbar">
-        <div class="topbar-title desktop-only">{{ t("header.clientPortal") }}</div>
-        <div class="topbar-actions desktop-only">
-          <LanguageToggle />
-          <button class="ghost" @click="toggleTheme">{{ themeLabel }}</button>
-          <button class="ghost" v-if="isAuthenticated" @click="logout">{{ t("buttons.logout") }}</button>
-        </div>
-        <HeaderMobile class="mobile-only" :title="t('header.clientPortal')" @open="drawerOpen = true" />
-      </header>
+      <header class="topbar">
+        <div class="topbar-identity desktop-only">
+          <div class="topbar-name">{{ displayName }}</div>
+          <div class="topbar-org">{{ organizationLabel }}</div>
+        </div>
+        <HeaderMobile class="mobile-only" :title="t('header.clientPortal')" @open="drawerOpen = true" />
+      </header>
       <DrawerMenu
         :open="drawerOpen"
         :items="navItems"
@@ -52,12 +55,19 @@ const router = useRouter();
 const { t } = useI18n();
 const auth = useAuthStore();
 const tenant = route.params.tenant as string;
-const theme = ref("light");
-const drawerOpen = ref(false);
-const isAuthenticated = computed(() => Boolean(auth.tokens?.access));
-const noticeMessage = computed(() =>
-  route.query.notice === "forbidden" ? t("errors.forbidden") : ""
-);
+const theme = ref("light");
+const drawerOpen = ref(false);
+const isAuthenticated = computed(() => Boolean(auth.tokens?.access));
+const displayName = computed(() => {
+  const first = (auth.user as { first_name?: string } | null)?.first_name || "";
+  const last = (auth.user as { last_name?: string } | null)?.last_name || "";
+  const full = `${last} ${first}`.trim();
+  return full || auth.user?.email || t("header.clientPortal");
+});
+const organizationLabel = computed(() => tenant);
+const noticeMessage = computed(() =>
+  route.query.notice === "forbidden" ? t("errors.forbidden") : ""
+);
 const navItems = computed(() => [
   { to: `/t/${tenant}/cabinet`, label: t("menu.cabinet") },
   { to: `/t/${tenant}/qr`, label: t("menu.qr") },

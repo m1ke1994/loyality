@@ -26,6 +26,7 @@ from .models import (
     OneTimeQR,
     LoyaltyRule,
     Offer,
+    OfferTarget,
     CouponAssignment,
     LoyaltyOperation,
     EmailVerificationCode,
@@ -457,6 +458,9 @@ class ClientOffersView(TenantMixin, APIView):
             models.Q(active_from__isnull=True) | models.Q(active_from__lte=now),
             models.Q(active_to__isnull=True) | models.Q(active_to__gte=now),
         )
+        offers = offers.filter(
+            models.Q(applies_to_all=True) | models.Q(targets__user=request.user)
+        ).distinct()
         return Response(OfferSerializer(offers, many=True).data)
 
 
@@ -761,7 +765,24 @@ class AdminOffersView(TenantMixin, APIView):
     def post(self, request, tenant_slug):
         serializer = OfferSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        offer = Offer.objects.create(tenant=request.user.tenant, **serializer.validated_data)
+        data = serializer.validated_data
+        client_ids = data.pop("client_ids", [])
+        applies_to_all = data.get("applies_to_all", True)
+        if client_ids:
+            applies_to_all = False
+        data["applies_to_all"] = applies_to_all
+        offer = Offer.objects.create(tenant=request.user.tenant, **data)
+        if not applies_to_all and client_ids:
+            clients = User.objects.filter(
+                tenant=request.user.tenant,
+                role=User.Role.CLIENT,
+                id__in=client_ids,
+            )
+            targets = [
+                OfferTarget(offer=offer, user=client, tenant=request.user.tenant)
+                for client in clients
+            ]
+            OfferTarget.objects.bulk_create(targets, ignore_conflicts=True)
         return Response(OfferSerializer(offer).data, status=status.HTTP_201_CREATED)
 
 

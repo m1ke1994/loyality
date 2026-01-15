@@ -1,11 +1,13 @@
 import { defineStore } from "pinia";
 
-type User = {
-  id: number;
-  email: string;
-  phone: string;
-  phone_verified: boolean;
-  email_verified: boolean;
+type User = {
+  id: number;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone: string;
+  phone_verified: boolean;
+  email_verified: boolean;
   role: string;
 };
 

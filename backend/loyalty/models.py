@@ -206,10 +206,29 @@ class Offer(models.Model):
     active_from = models.DateTimeField("Активно с", null=True, blank=True)
     active_to = models.DateTimeField("Активно по", null=True, blank=True)
     is_active = models.BooleanField("Активно", default=True)
+    applies_to_all = models.BooleanField("Applies to all clients", default=True)
 
     class Meta:
         verbose_name = "Предложение"
         verbose_name_plural = "Предложения"
+
+
+class OfferTarget(models.Model):
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name="targets")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="offer_targets")
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="offer_targets")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Offer target"
+        verbose_name_plural = "Offer targets"
+        constraints = [
+            models.UniqueConstraint(fields=["offer", "user"], name="uniq_offer_target"),
+        ]
+        indexes = [
+            models.Index(fields=["tenant", "user"]),
+            models.Index(fields=["tenant", "offer"]),
+        ]
 
 
 class Coupon(models.Model):

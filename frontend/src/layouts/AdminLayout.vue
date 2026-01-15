@@ -1,27 +1,30 @@
 <template>
   <div class="layout">
-    <aside class="sidebar desktop-only">
-      <div class="sidebar-brand" @click="goHome">{{ t("header.adminPortal") }}</div>
-      <nav class="sidebar-nav">
-        <router-link :to="`/t/${tenant}/admin/dashboard`">{{ t("menu.dashboard") }}</router-link>
-        <router-link :to="`/t/${tenant}/admin/customers`">{{ t("menu.customers") }}</router-link>
-        <router-link :to="`/t/${tenant}/admin/staff`">{{ t("menu.staff") }}</router-link>
-        <router-link :to="`/t/${tenant}/admin/locations`">{{ t("menu.locations") }}</router-link>
-        <router-link :to="`/t/${tenant}/admin/rules`">{{ t("menu.rules") }}</router-link>
-        <router-link :to="`/t/${tenant}/admin/operations`">{{ t("menu.operations") }}</router-link>
-        <router-link :to="`/t/${tenant}/admin/offers`">{{ t("menu.offers") }}</router-link>
-        <router-link :to="`/t/${tenant}/admin/settings`">{{ t("menu.settings") }}</router-link>
-      </nav>
-    </aside>
+    <aside class="sidebar desktop-only">
+      <div class="sidebar-brand" @click="goHome">{{ t("header.adminPortal") }}</div>
+      <nav class="sidebar-nav">
+        <router-link :to="`/t/${tenant}/admin/dashboard`">{{ t("menu.dashboard") }}</router-link>
+        <router-link :to="`/t/${tenant}/admin/customers`">{{ t("menu.customers") }}</router-link>
+        <router-link :to="`/t/${tenant}/admin/staff`">{{ t("menu.staff") }}</router-link>
+        <router-link :to="`/t/${tenant}/admin/locations`">{{ t("menu.locations") }}</router-link>
+        <router-link :to="`/t/${tenant}/admin/rules`">{{ t("menu.rules") }}</router-link>
+        <router-link :to="`/t/${tenant}/admin/operations`">{{ t("menu.operations") }}</router-link>
+        <router-link :to="`/t/${tenant}/admin/offers`">{{ t("menu.offers") }}</router-link>
+        <router-link :to="`/t/${tenant}/admin/settings`">{{ t("menu.settings") }}</router-link>
+      </nav>
+      <div class="sidebar-actions">
+        <button class="ghost" @click="toggleTheme">{{ themeLabel }}</button>
+        <button class="ghost" v-if="isAuthenticated" @click="logout">{{ t("buttons.logout") }}</button>
+      </div>
+    </aside>
     <div class="content">
-      <header class="topbar">
-        <div class="topbar-title desktop-only">{{ t("header.adminPortal") }}</div>
-        <div class="topbar-actions desktop-only">
-          <button class="ghost" @click="toggleTheme">{{ themeLabel }}</button>
-          <button class="ghost" v-if="isAuthenticated" @click="logout">{{ t("buttons.logout") }}</button>
-        </div>
-        <HeaderMobile class="mobile-only" :title="t('header.adminPortal')" @open="drawerOpen = true" />
-      </header>
+      <header class="topbar">
+        <div class="topbar-identity desktop-only">
+          <div class="topbar-name">{{ displayName }}</div>
+          <div class="topbar-org">{{ organizationLabel }}</div>
+        </div>
+        <HeaderMobile class="mobile-only" :title="t('header.adminPortal')" @open="drawerOpen = true" />
+      </header>
       <DrawerMenu
         :open="drawerOpen"
         :items="navItems"
@@ -54,12 +57,19 @@ const router = useRouter();
 const { t } = useI18n();
 const auth = useAuthStore();
 const tenant = route.params.tenant as string;
-const theme = ref("light");
-const drawerOpen = ref(false);
-const isAuthenticated = computed(() => Boolean(auth.tokens?.access));
-const noticeMessage = computed(() =>
-  route.query.notice === "forbidden" ? t("errors.forbidden") : ""
-);
+const theme = ref("light");
+const drawerOpen = ref(false);
+const isAuthenticated = computed(() => Boolean(auth.tokens?.access));
+const displayName = computed(() => {
+  const first = (auth.user as { first_name?: string } | null)?.first_name || "";
+  const last = (auth.user as { last_name?: string } | null)?.last_name || "";
+  const full = `${last} ${first}`.trim();
+  return full || auth.user?.email || t("header.adminPortal");
+});
+const organizationLabel = computed(() => tenant);
+const noticeMessage = computed(() =>
+  route.query.notice === "forbidden" ? t("errors.forbidden") : ""
+);
 const navItems = computed(() => [
   { to: `/t/${tenant}/admin/dashboard`, label: t("menu.dashboard") },
   { to: `/t/${tenant}/admin/customers`, label: t("menu.customers") },

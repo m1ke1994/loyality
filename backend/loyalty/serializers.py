@@ -3,6 +3,7 @@ from .models import (
     User,
     LoyaltyOperation,
     Offer,
+    OfferTarget,
     CouponAssignment,
     Location,
     LoyaltyRule,
@@ -97,6 +98,9 @@ class OperationSerializer(serializers.ModelSerializer):
 
 
 class OfferSerializer(serializers.ModelSerializer):
+    client_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
+    target_ids = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Offer
         fields = (
@@ -109,7 +113,13 @@ class OfferSerializer(serializers.ModelSerializer):
             "active_from",
             "active_to",
             "is_active",
+            "applies_to_all",
+            "target_ids",
+            "client_ids",
         )
+
+    def get_target_ids(self, obj):
+        return list(OfferTarget.objects.filter(offer=obj).values_list("user_id", flat=True))
 
 
 class CouponAssignmentSerializer(serializers.ModelSerializer):
