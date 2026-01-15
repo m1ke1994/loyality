@@ -1,7 +1,10 @@
 <template>
   <div v-if="open" class="drawer-overlay" @click="close">
-    <aside class="drawer" @click.stop>
-      <div class="drawer-header">{{ title }}</div>
+    <aside class="drawer" @click.stop>
+      <div class="drawer-header">
+        <span>{{ title }}</span>
+        <button class="ghost drawer-close" @click="close">×</button>
+      </div>
       <nav class="drawer-nav">
         <router-link v-for="item in items" :key="item.to" :to="item.to" @click="close">
           {{ item.label }}

@@ -1,7 +1,7 @@
 <template>
   <div class="header-mobile">
     <button class="ghost menu-button" :aria-label="t('accessibility.openMenu')" @click="$emit('open')">
-      Menu
+      ☰
     </button>
     <div class="header-mobile-title">
       <span class="brand-mark">L</span>
