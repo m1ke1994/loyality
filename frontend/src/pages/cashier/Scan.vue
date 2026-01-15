@@ -1,6 +1,6 @@
 <template>
   <div class="grid">
-    <div class="panel">
+    <div class="panel panel-spaced">
       <h2>{{ t("menu.scan") }}</h2>
       <video ref="video" class="qr-video"></video>
       <div class="grid" style="margin-top: 12px;">
@@ -168,5 +168,9 @@ onBeforeUnmount(() => {
   max-width: 360px;
   border-radius: 12px;
   border: 1px solid var(--border);
+}
+
+.panel-spaced > * + * {
+  margin-top: 12px;
 }
 </style>
