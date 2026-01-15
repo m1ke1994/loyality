@@ -24,22 +24,37 @@
     <div class="panel grid">
       <h3>{{ t("sections.verifyEmail") }}</h3>
       <button class="ghost" @click="requestEmailCode">{{ t("buttons.requestEmailCode") }}</button>
-      <input v-model="emailCode" :placeholder="t('placeholders.emailCode')" />
+      <div class="field-group">
+        <input v-model="emailCode" :placeholder="t('placeholders.emailCode')" />
+        <div class="field-help">Код из письма для подтверждения email.</div>
+      </div>
       <button @click="confirmEmail">{{ t("buttons.confirm") }}</button>
       <p class="small">{{ emailMessage }}</p>
     </div>
     <div class="panel grid">
       <h3>{{ t("sections.bindPhone") }}</h3>
-      <input v-model="phone" :placeholder="t('placeholders.phone')" />
+      <div class="field-group">
+        <input v-model="phone" :placeholder="t('placeholders.phone')" />
+        <div class="field-help">Номер телефона для привязки к аккаунту.</div>
+      </div>
       <button class="ghost" @click="requestPhone">{{ t("buttons.requestOtp") }}</button>
-      <input v-model="phoneCode" :placeholder="t('placeholders.phoneCode')" />
+      <div class="field-group">
+        <input v-model="phoneCode" :placeholder="t('placeholders.phoneCode')" />
+        <div class="field-help">Код из SMS для подтверждения телефона.</div>
+      </div>
       <button @click="confirmPhone">{{ t("buttons.confirm") }}</button>
       <p class="small">{{ phoneMessage }}</p>
     </div>
     <div class="panel grid">
       <h3>{{ t("sections.changePassword") }}</h3>
-      <input v-model="passwordCurrent" type="password" :placeholder="t('placeholders.currentPassword')" />
-      <input v-model="passwordNew" type="password" :placeholder="t('placeholders.newPassword')" />
+      <div class="field-group">
+        <input v-model="passwordCurrent" type="password" :placeholder="t('placeholders.currentPassword')" />
+        <div class="field-help">Введите текущий пароль.</div>
+      </div>
+      <div class="field-group">
+        <input v-model="passwordNew" type="password" :placeholder="t('placeholders.newPassword')" />
+        <div class="field-help">Введите новый пароль.</div>
+      </div>
       <button @click="changePassword">{{ t("buttons.changePassword") }}</button>
       <p class="small">{{ passwordMessage }}</p>
     </div>

@@ -14,7 +14,10 @@
       </div>
       <div class="panel">
         <h3>{{ t("home.customTenant") }}</h3>
-        <input v-model="tenant" :placeholder="t('placeholders.tenantSlug')" />
+        <div class="field-group">
+          <input v-model="tenant" :placeholder="t('placeholders.tenantSlug')" />
+          <div class="field-help">Короткий адрес организации в ссылке, например org1.</div>
+        </div>
         <div class="grid">
           <button @click="goTenant">{{ t("buttons.go") }}</button>
         </div>

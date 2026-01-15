@@ -1,18 +1,30 @@
 <template>
   <div class="panel grid">
-    <div class="grid two">
-      <select v-model="typeFilter">
-        <option value="">{{ t("filters.all") }}</option>
-        <option value="EARN">{{ t("filters.earn") }}</option>
-        <option value="REDEEM">{{ t("filters.redeem") }}</option>
-        <option value="REFUND">{{ t("filters.refund") }}</option>
-      </select>
-      <input v-model="receipt" :placeholder="t('placeholders.receiptId')" />
-    </div>
-    <div class="grid two">
-      <input v-model="dateFrom" type="date" />
-      <input v-model="dateTo" type="date" />
-    </div>
+    <div class="grid two">
+      <div class="field-group">
+        <select v-model="typeFilter">
+          <option value="">{{ t("filters.all") }}</option>
+          <option value="EARN">{{ t("filters.earn") }}</option>
+          <option value="REDEEM">{{ t("filters.redeem") }}</option>
+          <option value="REFUND">{{ t("filters.refund") }}</option>
+        </select>
+        <div class="field-help">Тип операций для фильтра.</div>
+      </div>
+      <div class="field-group">
+        <input v-model="receipt" :placeholder="t('placeholders.receiptId')" />
+        <div class="field-help">Номер чека для поиска.</div>
+      </div>
+    </div>
+    <div class="grid two">
+      <div class="field-group">
+        <input v-model="dateFrom" type="date" />
+        <div class="field-help">Начальная дата периода.</div>
+      </div>
+      <div class="field-group">
+        <input v-model="dateTo" type="date" />
+        <div class="field-help">Конечная дата периода.</div>
+      </div>
+    </div>
     <button class="ghost" @click="load">{{ t("buttons.filter") }}</button>
     <div v-if="ops.length === 0" class="small">{{ t("empty.history") }}</div>
     <div v-else class="list">

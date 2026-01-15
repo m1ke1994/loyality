@@ -1,8 +1,14 @@
 <template>
   <div class="panel grid small-form">
     <h2>{{ t("titles.verifyEmail") }}</h2>
-    <input v-model="email" :placeholder="t('placeholders.email')" />
-    <input v-model="code" :placeholder="t('placeholders.emailCode')" />
+    <div class="field-group">
+      <input v-model="email" :placeholder="t('placeholders.email')" />
+      <div class="field-help">Email, на который пришел код подтверждения.</div>
+    </div>
+    <div class="field-group">
+      <input v-model="code" :placeholder="t('placeholders.emailCode')" />
+      <div class="field-help">Шестизначный код из письма.</div>
+    </div>
     <button @click="verify" :disabled="busy">{{ t("buttons.confirmEmail") }}</button>
     <button class="ghost" @click="resend" :disabled="busy">{{ t("buttons.resendCode") }}</button>
     <p v-if="message" class="small">{{ message }}</p>

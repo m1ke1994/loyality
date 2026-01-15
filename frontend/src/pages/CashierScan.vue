@@ -3,10 +3,13 @@
     <div class="panel">
       <h2>{{ t("menu.scan") }}</h2>
       <video ref="video" class="qr-video"></video>
-      <div class="grid" style="margin-top: 12px;">
-        <input v-model="manualToken" :placeholder="t('placeholders.qrPayload')" />
-        <button class="ghost" @click="manualValidate">{{ t("buttons.validate") }}</button>
-      </div>
+      <div class="grid" style="margin-top: 12px;">
+        <div class="field-group">
+          <input v-model="manualToken" :placeholder="t('placeholders.qrPayload')" />
+          <div class="field-help">Введите токен QR, если сканер недоступен.</div>
+        </div>
+        <button class="ghost" @click="manualValidate">{{ t("buttons.validate") }}</button>
+      </div>
       <p v-if="error" class="small">{{ error }}</p>
     </div>
     <div class="panel" v-if="card">
@@ -14,7 +17,10 @@
       <div class="small">{{ t("labels.email") }}: {{ card.client_email }}</div>
       <div class="small">{{ t("labels.phone") }}: {{ card.client_phone }}</div>
       <div class="badge">{{ t("labels.currentPoints") }}: {{ card.current_points }}</div>
-      <input v-model.number="amount" type="number" :placeholder="t('placeholders.amount')" />
+      <div class="field-group">
+        <input v-model.number="amount" type="number" :placeholder="t('placeholders.amount')" />
+        <div class="field-help">Сумма покупки клиента.</div>
+      </div>
       <div class="grid two">
         <button @click="earn">{{ t("buttons.earn") }}</button>
         <button class="ghost" @click="redeem">{{ t("buttons.redeem") }}</button>

@@ -1,110 +1,110 @@
-<template>
-  <div class="grid">
-    <div class="panel">
-      <h2>{{ t("titles.rules") }}</h2>
-      <div v-if="rules.length === 0" class="small">{{ t("empty.rules") }}</div>
-      <div v-else class="list">
-        <div v-for="rule in rules" :key="rule.id" class="list-item">
-          <div>
-            <div>{{ t("rules.earnLabel", { percent: rule.earn_percent }) }}</div>
-            <div class="small">{{ t("rules.minLabel", { amount: rule.min_amount }) }}</div>
-          </div>
-          <div class="small">
-            {{ t("rules.locationLabel", { location: locationLabel(rule.location) }) }}
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="panel grid">
-      <h3>{{ t("sections.upsertRule") }}</h3>
-      <div class="small">{{ t("rules.help") }}</div>
-      <select v-model="location">
-        <option :value="null">{{ t("rules.defaultLocation") }}</option>
-        <option v-for="loc in locations" :key="loc.id" :value="loc.id">
-          {{ loc.name }} ({{ loc.address || "-" }})
-        </option>
-      </select>
-      <input v-model.number="earnPercent" type="number" :placeholder="t('placeholders.earnPercent')" />
-      <input v-model.number="minAmount" type="number" :placeholder="t('placeholders.minAmount')" />
-      <select v-model="rounding">
-        <option value="FLOOR">{{ t("filters.floor") }}</option>
-        <option value="ROUND">{{ t("filters.round") }}</option>
-        <option value="CEIL">{{ t("filters.ceil") }}</option>
-      </select>
-      <input v-model.number="bronze" type="number" :placeholder="t('placeholders.bronzeThreshold')" />
-      <input v-model.number="silver" type="number" :placeholder="t('placeholders.silverThreshold')" />
-      <input v-model.number="gold" type="number" :placeholder="t('placeholders.goldThreshold')" />
-      <button @click="upsert">{{ t("buttons.save") }}</button>
-      <p class="small">{{ message }}</p>
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
-import { useI18n } from "vue-i18n";
-import { apiFetch } from "../../api";
-import { useAuthStore } from "../../stores/auth";
-
-const route = useRoute();
-const { t } = useI18n();
-const auth = useAuthStore();
-const tenant = route.params.tenant as string;
-const rules = ref<any[]>([]);
-const locations = ref<any[]>([]);
-const location = ref<number | null>(null);
-const earnPercent = ref(3);
-const minAmount = ref(0);
-const rounding = ref("FLOOR");
-const bronze = ref(0);
-const silver = ref(500);
-const gold = ref(1500);
-const message = ref("");
-
-async function load() {
-  rules.value = await apiFetch(`/t/${tenant}/admin/rules`, {
-    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
-  });
-  locations.value = await apiFetch(`/t/${tenant}/admin/locations`, {
-    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
-  });
-}
-
-async function upsert() {
-  message.value = "";
-  await apiFetch(`/t/${tenant}/admin/rules`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.tokens?.access}`,
-    },
-    body: JSON.stringify({
-      location: location.value || null,
-      earn_percent: earnPercent.value,
-      min_amount: minAmount.value,
-      rounding_mode: rounding.value,
-      bronze_threshold: bronze.value,
-      silver_threshold: silver.value,
-      gold_threshold: gold.value,
-    }),
-  });
-  message.value = t("messages.saved");
-  await load();
-}
-
-onMounted(() => {
-  load();
-});
-
-function locationLabel(locationId: number | null) {
-  if (!locationId) {
-    return t("rules.defaultLocation");
-  }
-  const loc = locations.value.find((item) => item.id === locationId);
-  if (!loc) {
-    return `#${locationId}`;
-  }
-  return `${loc.name}${loc.address ? ` (${loc.address})` : ""}`;
-}
-</script>
+<template>
+  <div class="grid">
+    <div class="panel">
+      <h2>{{ t("titles.rules") }}</h2>
+      <div v-if="rules.length === 0" class="small">{{ t("empty.rules") }}</div>
+      <div v-else class="list">
+        <div v-for="rule in rules" :key="rule.id" class="list-item">
+          <div>
+            <div>{{ t("rules.earnLabel", { percent: rule.earn_percent }) }}</div>
+            <div class="small">{{ t("rules.minLabel", { amount: rule.min_amount }) }}</div>
+            <div class="small">
+              {{ rule.applies_to_all ? "Все клиенты" : `Выбрано клиентов: ${rule.target_ids?.length || 0}` }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel grid">
+      <h3>{{ t("sections.upsertRule") }}</h3>
+      <div class="field-group">
+        <input v-model.number="earnPercent" type="number" :placeholder="t('placeholders.earnPercent')" />
+        <div class="field-help">Процент начисления баллов за покупку.</div>
+      </div>
+      <div class="field-group">
+        <input v-model.number="minAmount" type="number" :placeholder="t('placeholders.minAmount')" />
+        <div class="field-help">Минимальная сумма, с которой начисляются баллы.</div>
+      </div>
+      <div class="grid">
+        <div class="small">Аудитория правила</div>
+        <div class="field-group">
+          <select v-model="targetMode">
+            <option value="all">Все клиенты</option>
+            <option value="selected">Выбрать клиентов</option>
+          </select>
+          <div class="field-help">Кому будет применяться правило.</div>
+        </div>
+        <div v-if="targetMode === 'selected'" class="list">
+          <label v-for="client in customers" :key="client.id" class="check-row">
+            <input v-model="selectedClientIds" type="checkbox" :value="client.id" />
+            <span>{{ client.email }}</span>
+          </label>
+          <div v-if="customers.length === 0" class="small">Нет клиентов для выбора.</div>
+        </div>
+      </div>
+      <button @click="upsert">{{ t("buttons.save") }}</button>
+      <p class="small">{{ message }}</p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { apiFetch } from "../../api";
+import { useAuthStore } from "../../stores/auth";
+
+const route = useRoute();
+const { t } = useI18n();
+const auth = useAuthStore();
+const tenant = route.params.tenant as string;
+const rules = ref<any[]>([]);
+const customers = ref<any[]>([]);
+const earnPercent = ref(3);
+const minAmount = ref(0);
+const targetMode = ref("all");
+const selectedClientIds = ref<number[]>([]);
+const message = ref("");
+
+async function load() {
+  rules.value = await apiFetch(`/t/${tenant}/admin/rules`, {
+    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+  });
+}
+
+async function loadCustomers() {
+  customers.value = await apiFetch(`/t/${tenant}/admin/customers`, {
+    headers: { Authorization: `Bearer ${auth.tokens?.access}` },
+  });
+}
+
+async function upsert() {
+  message.value = "";
+  await apiFetch(`/t/${tenant}/admin/rules`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${auth.tokens?.access}`,
+    },
+    body: JSON.stringify({
+      location: null,
+      earn_percent: earnPercent.value,
+      min_amount: minAmount.value,
+      rounding_mode: "FLOOR",
+      bronze_threshold: 0,
+      silver_threshold: 500,
+      gold_threshold: 1500,
+      applies_to_all: targetMode.value === "all",
+      client_ids: targetMode.value === "selected" ? selectedClientIds.value : [],
+    }),
+  });
+  message.value = t("messages.saved");
+  await load();
+}
+
+onMounted(() => {
+  load();
+  loadCustomers();
+});
+</script>

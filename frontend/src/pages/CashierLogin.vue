@@ -1,8 +1,14 @@
 <template>
   <div class="panel grid">
     <h2>{{ t("titles.cashierLogin") }}</h2>
-    <input v-model="email" :placeholder="t('placeholders.email')" />
-    <input v-model="password" type="password" :placeholder="t('placeholders.password')" />
+    <div class="field-group">
+      <input v-model="email" :placeholder="t('placeholders.email')" />
+      <div class="field-help">Email кассира для входа.</div>
+    </div>
+    <div class="field-group">
+      <input v-model="password" type="password" :placeholder="t('placeholders.password')" />
+      <div class="field-help">Пароль учетной записи кассира.</div>
+    </div>
     <button @click="login">{{ t("buttons.login") }}</button>
     <p v-if="error" class="small">{{ error }}</p>
   </div>

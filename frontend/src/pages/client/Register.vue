@@ -2,9 +2,18 @@
   <div class="panel grid small-form">
     <h2>{{ t("titles.register") }}</h2>
     <div class="grid">
-      <input v-model="email" :placeholder="t('placeholders.email')" />
-      <input v-model="password" type="password" :placeholder="t('placeholders.password')" />
-      <input v-model="password2" type="password" :placeholder="t('placeholders.passwordRepeat')" />
+      <div class="field-group">
+        <input v-model="email" :placeholder="t('placeholders.email')" />
+        <div class="field-help">Email для входа и подтверждения.</div>
+      </div>
+      <div class="field-group">
+        <input v-model="password" type="password" :placeholder="t('placeholders.password')" />
+        <div class="field-help">Придумайте пароль от 8 символов.</div>
+      </div>
+      <div class="field-group">
+        <input v-model="password2" type="password" :placeholder="t('placeholders.passwordRepeat')" />
+        <div class="field-help">Повторите пароль без ошибок.</div>
+      </div>
       <button @click="register">{{ t("buttons.createAccount") }}</button>
     </div>
     <p v-if="message" class="small">{{ message }}</p>

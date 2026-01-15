@@ -1,10 +1,16 @@
 <template>
   <div class="panel grid">
     <h2>{{ t("sections.bindPhone") }}</h2>
-    <input v-model="phone" :placeholder="t('placeholders.phone')" />
+    <div class="field-group">
+      <input v-model="phone" :placeholder="t('placeholders.phone')" />
+      <div class="field-help">Телефон клиента для подтверждения и связи.</div>
+    </div>
     <button @click="requestOtp">{{ t("buttons.requestOtp") }}</button>
     <div v-if="otp" class="badge">{{ t("labels.otp") }}: {{ otp }}</div>
-    <input v-model="code" :placeholder="t('placeholders.phoneCode')" />
+    <div class="field-group">
+      <input v-model="code" :placeholder="t('placeholders.phoneCode')" />
+      <div class="field-help">Код из SMS для подтверждения номера.</div>
+    </div>
     <button @click="confirmOtp">{{ t("buttons.confirm") }}</button>
     <p v-if="message" class="small">{{ message }}</p>
   </div>

@@ -1,7 +1,10 @@
 <template>
   <div class="panel grid">
     <div class="grid two">
-      <input v-model="receiptSearch" :placeholder="t('placeholders.receiptSearch')" />
+      <div class="field-group">
+        <input v-model="receiptSearch" :placeholder="t('placeholders.receiptSearch')" />
+        <div class="field-help">Поиск по номеру чека.</div>
+      </div>
       <button class="ghost" @click="load">{{ t("buttons.search") }}</button>
     </div>
     <div v-if="ops.length === 0" class="small">{{ t("empty.operations") }}</div>

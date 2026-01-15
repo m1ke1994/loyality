@@ -184,11 +184,30 @@ class LoyaltyRule(models.Model):
     bronze_threshold = models.IntegerField("Порог Bronze", default=0)
     silver_threshold = models.IntegerField("Порог Silver", default=500)
     gold_threshold = models.IntegerField("Порог Gold", default=1500)
+    applies_to_all = models.BooleanField("Applies to all clients", default=True)
 
     class Meta:
         verbose_name = "Правило лояльности"
         verbose_name_plural = "Правила лояльности"
         unique_together = ("tenant", "location")
+
+
+class RuleTarget(models.Model):
+    rule = models.ForeignKey(LoyaltyRule, on_delete=models.CASCADE, related_name="targets")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="rule_targets")
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="rule_targets")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Rule target"
+        verbose_name_plural = "Rule targets"
+        constraints = [
+            models.UniqueConstraint(fields=["rule", "user"], name="uniq_rule_target"),
+        ]
+        indexes = [
+            models.Index(fields=["tenant", "user"]),
+            models.Index(fields=["tenant", "rule"]),
+        ]
 
 
 class Offer(models.Model):

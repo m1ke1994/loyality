@@ -18,21 +18,39 @@
     </div>
     <div class="panel grid">
       <h3>{{ t("sections.addOffer") }}</h3>
-      <input v-model="title" :placeholder="t('placeholders.title')" />
-      <input v-model="description" :placeholder="t('placeholders.description')" />
-      <select v-model="type">
-        <option value="BONUS">{{ t("filters.offerBonus") }}</option>
-        <option value="MULTIPLIER">{{ t("filters.offerMultiplier") }}</option>
-        <option value="COUPON">{{ t("filters.offerCoupon") }}</option>
-      </select>
-      <input v-model.number="multiplier" type="number" :placeholder="t('placeholders.multiplier')" />
-      <input v-model.number="bonus" type="number" :placeholder="t('placeholders.bonusPoints')" />
+      <div class="field-group">
+        <input v-model="title" :placeholder="t('placeholders.title')" />
+        <div class="field-help">Короткое название, которое видит клиент.</div>
+      </div>
+      <div class="field-group">
+        <input v-model="description" :placeholder="t('placeholders.description')" />
+        <div class="field-help">Пояснение, какую выгоду дает предложение.</div>
+      </div>
+      <div class="field-group">
+        <select v-model="type">
+          <option value="BONUS">{{ t("filters.offerBonus") }}</option>
+          <option value="MULTIPLIER">{{ t("filters.offerMultiplier") }}</option>
+          <option value="COUPON">{{ t("filters.offerCoupon") }}</option>
+        </select>
+        <div class="field-help">Тип механики предложения.</div>
+      </div>
+      <div class="field-group">
+        <input v-model.number="multiplier" type="number" :placeholder="t('placeholders.multiplier')" />
+        <div class="field-help">Коэффициент начисления баллов.</div>
+      </div>
+      <div class="field-group">
+        <input v-model.number="bonus" type="number" :placeholder="t('placeholders.bonusPoints')" />
+        <div class="field-help">Сколько дополнительных баллов начислить.</div>
+      </div>
       <div class="grid">
         <div class="small">Аудитория предложения</div>
-        <select v-model="targetMode">
-          <option value="all">Все клиенты</option>
-          <option value="selected">Выбрать клиентов</option>
-        </select>
+        <div class="field-group">
+          <select v-model="targetMode">
+            <option value="all">Все клиенты</option>
+            <option value="selected">Выбрать клиентов</option>
+          </select>
+          <div class="field-help">Кому будет доступно предложение.</div>
+        </div>
         <div v-if="targetMode === 'selected'" class="list">
           <label v-for="client in customers" :key="client.id" class="check-row">
             <input v-model="selectedClientIds" type="checkbox" :value="client.id" />

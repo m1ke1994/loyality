@@ -25,6 +25,7 @@ from .models import (
     LoyaltyCard,
     OneTimeQR,
     LoyaltyRule,
+    RuleTarget,
     Offer,
     OfferTarget,
     OfferRedemption,
@@ -138,14 +139,22 @@ def mask_phone(phone: str) -> str:
     return f"***{phone[-4:]}"
 
 
-def get_rule(tenant: Tenant, location: Location | None) -> LoyaltyRule:
+def get_rule(tenant: Tenant, location: Location | None, user: User | None) -> LoyaltyRule:
+    if user:
+        targeted = (
+            LoyaltyRule.objects.filter(tenant=tenant, targets__user=user)
+            .order_by("-id")
+            .first()
+        )
+        if targeted:
+            return targeted
     if location:
-        rule = LoyaltyRule.objects.filter(tenant=tenant, location=location).first()
+        rule = LoyaltyRule.objects.filter(tenant=tenant, location=location, applies_to_all=True).first()
         if rule:
             return rule
-    rule = LoyaltyRule.objects.filter(tenant=tenant, location__isnull=True).first()
+    rule = LoyaltyRule.objects.filter(tenant=tenant, location__isnull=True, applies_to_all=True).first()
     if not rule:
-        rule = LoyaltyRule.objects.create(tenant=tenant, earn_percent=Decimal("3.0"))
+        rule = LoyaltyRule.objects.create(tenant=tenant, earn_percent=Decimal("3.0"), applies_to_all=True)
     return rule
 
 
@@ -591,7 +600,7 @@ class LoyaltyRefundView(TenantMixin, APIView):
                 card.current_points -= points
             else:
                 card.current_points += points
-            rule = get_rule(tenant, original.location)
+            rule = get_rule(tenant, original.location, card.user)
             update_tier(card, rule)
             card.save()
             LoyaltyOperation.objects.create(
@@ -761,12 +770,32 @@ class AdminRulesView(TenantMixin, APIView):
     def post(self, request, tenant_slug):
         serializer = LoyaltyRuleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        location = serializer.validated_data.get("location")
+        data = serializer.validated_data
+        client_ids = data.pop("client_ids", [])
+        applies_to_all = data.get("applies_to_all", True)
+        if client_ids:
+            applies_to_all = False
+        data["applies_to_all"] = applies_to_all
+        location = data.get("location")
         rule, _ = LoyaltyRule.objects.update_or_create(
             tenant=request.user.tenant,
             location=location,
-            defaults=serializer.validated_data,
+            defaults=data,
         )
+        if applies_to_all:
+            RuleTarget.objects.filter(rule=rule).delete()
+        else:
+            RuleTarget.objects.filter(rule=rule).exclude(user_id__in=client_ids).delete()
+            clients = User.objects.filter(
+                tenant=request.user.tenant,
+                role=User.Role.CLIENT,
+                id__in=client_ids,
+            )
+            targets = [
+                RuleTarget(rule=rule, user=client, tenant=request.user.tenant)
+                for client in clients
+            ]
+            RuleTarget.objects.bulk_create(targets, ignore_conflicts=True)
         return Response(LoyaltyRuleSerializer(rule).data)
 
 
@@ -898,7 +927,7 @@ def handle_points(
             )
             return Response({"detail": reason}, status=status.HTTP_400_BAD_REQUEST)
 
-        rule = get_rule(tenant, location)
+        rule = get_rule(tenant, location, card.user)
         if op_type == LoyaltyOperation.Type.EARN:
             if Decimal(amount) < rule.min_amount:
                 return Response({"detail": "MIN_AMOUNT_NOT_MET"}, status=status.HTTP_400_BAD_REQUEST)

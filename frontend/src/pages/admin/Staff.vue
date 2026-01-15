@@ -18,21 +18,33 @@
     </div>
     <div class="panel grid">
       <h3>{{ t("sections.addStaff") }}</h3>
-      <input v-model="email" :placeholder="t('placeholders.email')" />
-      <input v-model="password" type="password" :placeholder="t('placeholders.password')" />
-      <select v-model="role">
-        <option value="CASHIER">{{ t("filters.roleCashier") }}</option>
-        <option value="ADMIN">{{ t("filters.roleAdmin") }}</option>
-      </select>
+      <div class="field-group">
+        <input v-model="email" :placeholder="t('placeholders.email')" />
+        <div class="field-help">Email нового сотрудника.</div>
+      </div>
+      <div class="field-group">
+        <input v-model="password" type="password" :placeholder="t('placeholders.password')" />
+        <div class="field-help">Временный пароль для входа.</div>
+      </div>
+      <div class="field-group">
+        <select v-model="role">
+          <option value="CASHIER">{{ t("filters.roleCashier") }}</option>
+          <option value="ADMIN">{{ t("filters.roleAdmin") }}</option>
+        </select>
+        <div class="field-help">Роль определяет доступ к разделам.</div>
+      </div>
       <div v-if="locations.length === 0" class="small">
         {{ t("messages.addLocationsFirst") }}
       </div>
-      <select v-model="locationId" :disabled="locations.length === 0">
-        <option :value="null">{{ t("placeholders.locationNone") }}</option>
-        <option v-for="loc in locations" :key="loc.id" :value="loc.id">
-          {{ loc.name }} ({{ loc.address || "-" }})
-        </option>
-      </select>
+      <div class="field-group">
+        <select v-model="locationId" :disabled="locations.length === 0">
+          <option :value="null">{{ t("placeholders.locationNone") }}</option>
+          <option v-for="loc in locations" :key="loc.id" :value="loc.id">
+            {{ loc.name }} ({{ loc.address || "-" }})
+          </option>
+        </select>
+        <div class="field-help">Привязка сотрудника к точке (необязательно).</div>
+      </div>
       <button @click="create">{{ t("buttons.create") }}</button>
       <p class="small">{{ message }}</p>
     </div>

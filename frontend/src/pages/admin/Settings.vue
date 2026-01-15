@@ -1,9 +1,18 @@
 <template>
   <div class="panel grid">
     <h2>{{ t("titles.settings") }}</h2>
-    <input v-model="brandColor" :placeholder="t('placeholders.brandColor')" />
-    <input v-model="emailFrom" :placeholder="t('placeholders.emailFrom')" />
-    <input v-model="logoUrl" :placeholder="t('placeholders.logoUrl')" />
+    <div class="field-group">
+      <input v-model="brandColor" :placeholder="t('placeholders.brandColor')" />
+      <div class="field-help">Основной цвет для оформления портала.</div>
+    </div>
+    <div class="field-group">
+      <input v-model="emailFrom" :placeholder="t('placeholders.emailFrom')" />
+      <div class="field-help">Адрес отправителя системных писем.</div>
+    </div>
+    <div class="field-group">
+      <input v-model="logoUrl" :placeholder="t('placeholders.logoUrl')" />
+      <div class="field-help">Ссылка на логотип компании.</div>
+    </div>
     <button @click="save">{{ t("buttons.save") }}</button>
     <p class="small">{{ message }}</p>
   </div>

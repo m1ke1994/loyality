@@ -15,8 +15,14 @@
     </div>
     <div class="panel grid">
       <h3>{{ t("sections.addLocation") }}</h3>
-      <input v-model="name" :placeholder="t('placeholders.name')" />
-      <input v-model="address" :placeholder="t('placeholders.address')" />
+      <div class="field-group">
+        <input v-model="name" :placeholder="t('placeholders.name')" />
+        <div class="field-help">Название точки, например “Центр”.</div>
+      </div>
+      <div class="field-group">
+        <input v-model="address" :placeholder="t('placeholders.address')" />
+        <div class="field-help">Адрес или ориентир для сотрудников.</div>
+      </div>
       <button @click="create">{{ t("buttons.create") }}</button>
       <p class="small">{{ message }}</p>
     </div>

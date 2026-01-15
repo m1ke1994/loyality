@@ -1,8 +1,14 @@
 <template>
   <div class="panel grid small-form">
     <h2>{{ t("titles.loginClient") }}</h2>
-    <input v-model="email" :placeholder="t('placeholders.email')" />
-    <input v-model="password" type="password" :placeholder="t('placeholders.password')" />
+    <div class="field-group">
+      <input v-model="email" :placeholder="t('placeholders.email')" />
+      <div class="field-help">Email, который вы использовали при регистрации.</div>
+    </div>
+    <div class="field-group">
+      <input v-model="password" type="password" :placeholder="t('placeholders.password')" />
+      <div class="field-help">Пароль от вашего аккаунта.</div>
+    </div>
     <button @click="login">{{ t("buttons.login") }}</button>
     <p class="small">
       {{ t("messages.noAccount") }}

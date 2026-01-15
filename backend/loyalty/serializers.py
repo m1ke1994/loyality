@@ -8,6 +8,7 @@ from .models import (
     CouponAssignment,
     Location,
     LoyaltyRule,
+    RuleTarget,
     OrganizationSettings,
 )
 
@@ -152,6 +153,9 @@ class LocationSerializer(serializers.ModelSerializer):
 
 
 class LoyaltyRuleSerializer(serializers.ModelSerializer):
+    client_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
+    target_ids = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = LoyaltyRule
         fields = (
@@ -163,7 +167,13 @@ class LoyaltyRuleSerializer(serializers.ModelSerializer):
             "bronze_threshold",
             "silver_threshold",
             "gold_threshold",
+            "applies_to_all",
+            "target_ids",
+            "client_ids",
         )
+
+    def get_target_ids(self, obj):
+        return list(RuleTarget.objects.filter(rule=obj).values_list("user_id", flat=True))
 
 
 class OrganizationSettingsSerializer(serializers.ModelSerializer):
