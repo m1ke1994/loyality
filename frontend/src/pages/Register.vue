@@ -2,6 +2,12 @@
   <div class="panel grid">
     <h2>{{ t("titles.register") }}</h2>
     <div class="field-group">
+      <input v-model="lastName" :placeholder="t('placeholders.lastName')" />
+    </div>
+    <div class="field-group">
+      <input v-model="firstName" :placeholder="t('placeholders.firstName')" />
+    </div>
+    <div class="field-group">
       <input v-model="email" :placeholder="t('placeholders.email')" />
       <div class="field-help">Email для входа и получения уведомлений.</div>
     </div>
@@ -24,20 +30,27 @@ import { useAuthStore } from "../stores/auth";
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
-const auth = useAuthStore();
-const tenant = route.params.tenant as string;
-const email = ref("");
-const password = ref("");
-const error = ref("");
+const auth = useAuthStore();
+const tenant = route.params.tenant as string;
+const firstName = ref("");
+const lastName = ref("");
+const email = ref("");
+const password = ref("");
+const error = ref("");
 
 async function register() {
   error.value = "";
   try {
-    const data = await apiFetch(`/t/${tenant}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.value, password: password.value }),
-    });
+    const data = await apiFetch(`/t/${tenant}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        first_name: firstName.value,
+        last_name: lastName.value,
+        email: email.value,
+        password: password.value,
+      }),
+    });
     auth.setAuth({ user: data.user, tokens: data.tokens });
     router.push(`/t/${tenant}/bind-phone`);
   } catch (err: any) {

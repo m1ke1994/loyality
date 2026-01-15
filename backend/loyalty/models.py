@@ -189,7 +189,6 @@ class LoyaltyRule(models.Model):
     class Meta:
         verbose_name = "Правило лояльности"
         verbose_name_plural = "Правила лояльности"
-        unique_together = ("tenant", "location")
 
 
 class RuleTarget(models.Model):

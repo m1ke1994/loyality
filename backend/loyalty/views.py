@@ -149,10 +149,18 @@ def get_rule(tenant: Tenant, location: Location | None, user: User | None) -> Lo
         if targeted:
             return targeted
     if location:
-        rule = LoyaltyRule.objects.filter(tenant=tenant, location=location, applies_to_all=True).first()
+        rule = (
+            LoyaltyRule.objects.filter(tenant=tenant, location=location, applies_to_all=True)
+            .order_by("-id")
+            .first()
+        )
         if rule:
             return rule
-    rule = LoyaltyRule.objects.filter(tenant=tenant, location__isnull=True, applies_to_all=True).first()
+    rule = (
+        LoyaltyRule.objects.filter(tenant=tenant, location__isnull=True, applies_to_all=True)
+        .order_by("-id")
+        .first()
+    )
     if not rule:
         rule = LoyaltyRule.objects.create(tenant=tenant, earn_percent=Decimal("3.0"), applies_to_all=True)
     return rule
@@ -800,7 +808,7 @@ class AdminRulesView(TenantMixin, APIView):
     permission_classes = [IsTenantMember, IsAdmin]
 
     def get(self, request, tenant_slug):
-        rules = LoyaltyRule.objects.filter(tenant=request.user.tenant)
+        rules = LoyaltyRule.objects.filter(tenant=request.user.tenant).order_by("-id")
         return Response(LoyaltyRuleSerializer(rules, many=True).data)
 
     def post(self, request, tenant_slug):
@@ -813,15 +821,16 @@ class AdminRulesView(TenantMixin, APIView):
             applies_to_all = False
         data["applies_to_all"] = applies_to_all
         location = data.get("location")
-        rule, _ = LoyaltyRule.objects.update_or_create(
-            tenant=request.user.tenant,
-            location=location,
-            defaults=data,
-        )
         if applies_to_all:
+            rule, _ = LoyaltyRule.objects.update_or_create(
+                tenant=request.user.tenant,
+                location=location,
+                applies_to_all=True,
+                defaults=data,
+            )
             RuleTarget.objects.filter(rule=rule).delete()
         else:
-            RuleTarget.objects.filter(rule=rule).exclude(user_id__in=client_ids).delete()
+            rule = LoyaltyRule.objects.create(tenant=request.user.tenant, **data)
             clients = User.objects.filter(
                 tenant=request.user.tenant,
                 role=User.Role.CLIENT,
