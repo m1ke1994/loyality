@@ -29,11 +29,11 @@
         <input v-model="receiptId" :placeholder="t('placeholders.receiptId')" :disabled="!card" />
         <div class="field-help">Номер чека для учета и возврата.</div>
       </div>
-      <div class="grid two">
+      <div class="grid two action-row">
         <button @click="earn" :disabled="!card">{{ t("buttons.earn") }}</button>
         <button class="ghost" @click="redeem" :disabled="!card">{{ t("buttons.redeem") }}</button>
       </div>
-      <div class="grid">
+      <div class="grid action-row">
         <button class="ghost" @click="refund" :disabled="!receiptId">{{ t("buttons.refundByReceipt") }}</button>
       </div>
       <p v-if="message" class="small">{{ message }}</p>
@@ -171,6 +171,10 @@ onBeforeUnmount(() => {
 }
 
 .panel-spaced > * + * {
+  margin-top: 12px;
+}
+
+.action-row {
   margin-top: 12px;
 }
 </style>
