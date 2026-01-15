@@ -1,218 +1,222 @@
-{
-  "brand": {
-    "client": "Loyalty Client",
-    "saas": "Loyalty SaaS",
-    "widget": "Loyalty Widget"
-  },
-  "header": {
-    "clientPortal": "Client Portal",
-    "cashierPortal": "Cashier Portal",
-    "adminPortal": "Admin Portal"
-  },
-  "menu": {
-    "cabinet": "Cabinet",
-    "qr": "QR",
-    "offers": "Offers",
-    "history": "History",
-    "profile": "Profile",
-    "scan": "Scan",
-    "operations": "Operations",
-    "dashboard": "Dashboard",
-    "customers": "Customers",
-    "staff": "Staff",
-    "locations": "Locations",
-    "rules": "Rules",
-    "settings": "Settings"
-  },
-  "titles": {
-    "cabinet": "Cabinet",
-    "offers": "Offers",
-    "history": "History",
-    "profile": "Profile",
-    "qr": "QR",
-    "loginClient": "Client Login",
-    "register": "Register",
-    "verifyEmail": "Verify Email",
-    "cashierLogin": "Cashier Login",
-    "adminLogin": "Admin Login",
-    "dashboard": "Dashboard",
-    "customers": "Customers",
-    "staff": "Staff",
-    "locations": "Locations",
-    "rules": "Rules",
-    "operations": "Operations",
-    "offersAdmin": "Offers",
-    "settings": "Settings"
-  },
-  "buttons": {
-    "showQr": "Show QR",
-    "refresh": "Refresh",
-    "logout": "Logout",
-    "lightTheme": "Light theme",
-    "darkTheme": "Dark theme",
-    "login": "Login",
-    "register": "Register",
-    "enterCode": "Enter Code",
-    "createAccount": "Create Account",
-    "confirm": "Confirm",
-    "requestCode": "Request Code",
-    "resendCode": "Resend Code",
-    "filter": "Filter",
-    "search": "Search",
-    "go": "Go",
-    "validate": "Validate",
-    "earn": "Earn",
-    "redeem": "Redeem",
-    "refundByReceipt": "Refund by receipt",
-    "requestOtp": "Request OTP",
-    "requestEmailCode": "Request Code",
-    "confirmEmail": "Confirm Email",
-    "goToLogin": "Go to Login",
-    "confirmPhone": "Confirm Phone",
-    "changePassword": "Change Password",
-    "save": "Save",
-    "create": "Create"
-  },
-  "labels": {
-    "points": "Points",
-    "pointsShort": "pts",
-    "tier": "Tier",
-    "recentOperations": "Recent Operations",
-    "email": "Email",
-    "emailVerified": "Email Verified",
-    "phone": "Phone",
-    "phoneVerified": "Phone Verified",
-    "currentPoints": "Current points",
-    "qrToken": "Token",
-    "otp": "OTP",
-    "receiptId": "Receipt",
-    "client": "Client",
-    "amount": "Amount",
-    "status": "Status",
-    "clients": "Clients",
-    "staff": "Staff",
-    "locations": "Locations",
-    "operations": "Operations",
-    "role": "Role",
-    "active": "Active",
-    "disabled": "Disabled",
-    "location": "Location"
-  },
-  "sections": {
-    "verifyEmail": "Verify Email",
-    "bindPhone": "Bind Phone",
-    "changePassword": "Change Password",
-    "addStaff": "Add Staff",
-    "addLocation": "Add Location",
-    "upsertRule": "Upsert Rule",
-    "addOffer": "Add Offer"
-  },
-  "placeholders": {
-    "email": "email",
-    "password": "password",
-    "passwordRepeat": "repeat password",
-    "emailCode": "email code",
-    "phone": "phone",
-    "phoneCode": "OTP",
-    "currentPassword": "current password",
-    "newPassword": "new password",
-    "receiptId": "receipt id",
-    "receiptSearch": "search receipt id",
-    "dateFrom": "date from",
-    "dateTo": "date to",
-    "tenantSlug": "tenant slug",
-    "qrPayload": "paste qr payload",
-    "amount": "amount",
-    "locationId": "location id",
-    "name": "name",
-    "address": "address",
-    "title": "title",
-    "description": "description",
-    "multiplier": "multiplier",
-    "bonusPoints": "bonus points",
-    "brandColor": "brand color",
-    "emailFrom": "email from",
-    "logoUrl": "logo url",
-    "earnPercent": "earn percent",
-    "minAmount": "min amount",
-    "bronzeThreshold": "bronze threshold",
-    "silverThreshold": "silver threshold",
-    "goldThreshold": "gold threshold",
-    "locationOptional": "location id (optional)"
-  },
-  "filters": {
-    "all": "All",
-    "earn": "Earn",
-    "redeem": "Redeem",
-    "refund": "Refund",
-    "floor": "Floor",
-    "round": "Round",
-    "ceil": "Ceil",
-    "roleCashier": "Cashier",
-    "roleAdmin": "Admin",
-    "offerBonus": "Bonus",
-    "offerMultiplier": "Multiplier",
-    "offerCoupon": "Coupon"
-  },
-  "home": {
-    "subtitle": "Choose a tenant to enter the client, cashier, or admin portals.",
-    "demoTenant": "Demo Tenant",
-    "slug": "Slug",
-    "clientPortal": "Client Portal",
-    "cashierPortal": "Cashier Portal",
-    "adminPortal": "Admin Portal",
-    "customTenant": "Custom Tenant"
-  },
-  "widget": {
-    "subtitle": "Quick access to your loyalty card."
-  },
-  "messages": {
-    "noAccount": "No account?",
-    "emailVerificationRequired": "Email verification required.",
-    "codeSent": "Code sent",
-    "emailVerified": "Email verified",
-    "emailVerifiedLogin": "Email verified. Please login.",
-    "verificationCodeSent": "Verification code sent",
-    "codeResent": "Code resent",
-    "otpSent": "OTP sent",
-    "phoneVerified": "Phone verified",
-    "passwordChanged": "Password changed",
-    "saved": "Saved",
-    "created": "Created",
-    "refundSuccess": "Refunded: {points} pts. Balance: {balance}",
-    "earnSuccess": "OK: {points} pts. Balance: {balance}",
-    "qrRefresh": "Refreshes every 5 seconds.",
-    "verificationSentTo": "We sent a verification code to {email}.",
-    "noData": "No data yet."
-  },
-  "rules": {
-    "earnLabel": "Earn: {percent}%",
-    "minLabel": "Min: {amount}",
-    "locationLabel": "Location: {location}",
-    "tenant": "Tenant"
-  },
-  "empty": {
-    "cabinet": "No operations yet.",
-    "offers": "No offers yet.",
-    "history": "No history yet.",
-    "customers": "No customers yet.",
-    "staff": "No staff yet.",
-    "locations": "No locations yet.",
-    "rules": "No rules yet.",
-    "operations": "No operations yet."
-  },
-  "common": {
-    "yes": "Yes",
-    "no": "No"
-  },
-  "errors": {
-    "notClient": "Not a client account.",
-    "notCashier": "Not a cashier account.",
-    "notAdmin": "Not an admin account.",
-    "forbidden": "Insufficient permissions."
-  },
-  "accessibility": {
-    "languageToggle": "Language toggle",
-    "openMenu": "Open menu"
-  }
-}
+{
+  "brand": {
+    "client": "Loyalty Client",
+    "saas": "Loyalty SaaS",
+    "widget": "Loyalty Widget"
+  },
+  "header": {
+    "clientPortal": "Client Portal",
+    "cashierPortal": "Cashier Portal",
+    "adminPortal": "Admin Portal"
+  },
+  "menu": {
+    "cabinet": "Cabinet",
+    "qr": "QR",
+    "offers": "Offers",
+    "history": "History",
+    "profile": "Profile",
+    "scan": "Scan",
+    "operations": "Operations",
+    "dashboard": "Dashboard",
+    "customers": "Customers",
+    "staff": "Staff",
+    "locations": "Locations",
+    "rules": "Rules",
+    "settings": "Settings"
+  },
+  "titles": {
+    "cabinet": "Cabinet",
+    "offers": "Offers",
+    "history": "History",
+    "profile": "Profile",
+    "qr": "QR",
+    "loginClient": "Client Login",
+    "register": "Register",
+    "verifyEmail": "Verify Email",
+    "cashierLogin": "Cashier Login",
+    "adminLogin": "Admin Login",
+    "dashboard": "Dashboard",
+    "customers": "Customers",
+    "staff": "Staff",
+    "locations": "Locations",
+    "rules": "Rules",
+    "operations": "Operations",
+    "offersAdmin": "Offers",
+    "settings": "Settings"
+  },
+  "buttons": {
+    "showQr": "Show QR",
+    "refresh": "Refresh",
+    "logout": "Logout",
+    "lightTheme": "Light theme",
+    "darkTheme": "Dark theme",
+    "login": "Login",
+    "register": "Register",
+    "enterCode": "Enter Code",
+    "createAccount": "Create Account",
+    "confirm": "Confirm",
+    "requestCode": "Request Code",
+    "resendCode": "Resend Code",
+    "filter": "Filter",
+    "search": "Search",
+    "go": "Go",
+    "validate": "Validate",
+    "earn": "Earn",
+    "redeem": "Redeem",
+    "refundByReceipt": "Refund by receipt",
+    "requestOtp": "Request OTP",
+    "requestEmailCode": "Request Code",
+    "confirmEmail": "Confirm Email",
+    "goToLogin": "Go to Login",
+    "confirmPhone": "Confirm Phone",
+    "changePassword": "Change Password",
+    "save": "Save",
+    "create": "Create"
+  },
+  "labels": {
+    "points": "Points",
+    "pointsShort": "pts",
+    "tier": "Tier",
+    "recentOperations": "Recent Operations",
+    "email": "Email",
+    "emailVerified": "Email Verified",
+    "phone": "Phone",
+    "phoneVerified": "Phone Verified",
+    "currentPoints": "Current points",
+    "qrToken": "Token",
+    "otp": "OTP",
+    "receiptId": "Receipt",
+    "client": "Client",
+    "amount": "Amount",
+    "status": "Status",
+    "clients": "Clients",
+    "staff": "Staff",
+    "locations": "Locations",
+    "operations": "Operations",
+    "role": "Role",
+    "active": "Active",
+    "disabled": "Disabled",
+    "location": "Location"
+  },
+  "sections": {
+    "verifyEmail": "Verify Email",
+    "bindPhone": "Bind Phone",
+    "changePassword": "Change Password",
+    "addStaff": "Add Staff",
+    "addLocation": "Add Location",
+    "upsertRule": "Upsert Rule",
+    "addOffer": "Add Offer"
+  },
+  "placeholders": {
+    "email": "email",
+    "password": "password",
+    "passwordRepeat": "repeat password",
+    "emailCode": "email code",
+    "phone": "phone",
+    "phoneCode": "OTP",
+    "currentPassword": "current password",
+    "newPassword": "new password",
+    "receiptId": "receipt id",
+    "receiptSearch": "search receipt id",
+    "dateFrom": "date from",
+    "dateTo": "date to",
+    "tenantSlug": "tenant slug",
+    "qrPayload": "paste qr payload",
+    "amount": "amount",
+    "locationId": "location id",
+    "name": "name",
+    "address": "address",
+    "title": "title",
+    "description": "description",
+    "multiplier": "multiplier",
+    "bonusPoints": "bonus points",
+    "brandColor": "brand color",
+    "emailFrom": "email from",
+    "logoUrl": "logo url",
+    "earnPercent": "earn percent",
+    "minAmount": "min amount",
+    "bronzeThreshold": "bronze threshold",
+    "silverThreshold": "silver threshold",
+    "goldThreshold": "gold threshold",
+    "locationOptional": "location id (optional)",
+    "locationNone": "no location"
+  },
+  "filters": {
+    "all": "All",
+    "earn": "Earn",
+    "redeem": "Redeem",
+    "refund": "Refund",
+    "floor": "Floor",
+    "round": "Round",
+    "ceil": "Ceil",
+    "roleCashier": "Cashier",
+    "roleAdmin": "Admin",
+    "offerBonus": "Bonus",
+    "offerMultiplier": "Multiplier",
+    "offerCoupon": "Coupon"
+  },
+  "home": {
+    "subtitle": "Choose a tenant to enter the client, cashier, or admin portals.",
+    "demoTenant": "Demo Tenant",
+    "slug": "Slug",
+    "clientPortal": "Client Portal",
+    "cashierPortal": "Cashier Portal",
+    "adminPortal": "Admin Portal",
+    "customTenant": "Custom Tenant"
+  },
+  "widget": {
+    "subtitle": "Quick access to your loyalty card."
+  },
+  "messages": {
+    "noAccount": "No account?",
+    "emailVerificationRequired": "Email verification required.",
+    "codeSent": "Code sent",
+    "emailVerified": "Email verified",
+    "emailVerifiedLogin": "Email verified. Please login.",
+    "verificationCodeSent": "Verification code sent",
+    "codeResent": "Code resent",
+    "otpSent": "OTP sent",
+    "phoneVerified": "Phone verified",
+    "passwordChanged": "Password changed",
+    "saved": "Saved",
+    "created": "Created",
+    "refundSuccess": "Refunded: {points} pts. Balance: {balance}",
+    "earnSuccess": "OK: {points} pts. Balance: {balance}",
+    "qrRefresh": "Refreshes every 5 seconds.",
+    "verificationSentTo": "We sent a verification code to {email}.",
+    "noData": "No data yet.",
+    "addLocationsFirst": "Add locations first in the \"Locations\" section."
+  },
+  "rules": {
+    "earnLabel": "Earn: {percent}%",
+    "minLabel": "Min: {amount}",
+    "locationLabel": "Location: {location}",
+    "tenant": "Tenant",
+    "help": "Rule defines points accrual for a specific location. If no location is selected, it applies to the whole organization.",
+    "defaultLocation": "Default (all organization)"
+  },
+  "empty": {
+    "cabinet": "No operations yet.",
+    "offers": "No offers yet.",
+    "history": "No history yet.",
+    "customers": "No customers yet.",
+    "staff": "No staff yet.",
+    "locations": "No locations yet.",
+    "rules": "No rules yet.",
+    "operations": "No operations yet."
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "errors": {
+    "notClient": "Not a client account.",
+    "notCashier": "Not a cashier account.",
+    "notAdmin": "Not an admin account.",
+    "forbidden": "Insufficient permissions."
+  },
+  "accessibility": {
+    "languageToggle": "Language toggle",
+    "openMenu": "Open menu"
+  }
+}
