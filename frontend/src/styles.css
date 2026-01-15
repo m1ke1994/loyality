@@ -350,6 +350,7 @@ button.ghost {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  margin-left: auto;
 }
 
 .burger {
@@ -361,6 +362,7 @@ button.ghost {
 .menu-button {
   font-size: 20px;
   padding: 6px 10px;
+  display: none;
 }
 
 .drawer-overlay {
@@ -477,6 +479,10 @@ button.ghost {
 
   .mobile-only {
     display: flex;
+  }
+
+  .menu-button {
+    display: inline-flex;
   }
 
   .page {

@@ -32,7 +32,7 @@
           <option value="MULTIPLIER">{{ t("filters.offerMultiplier") }}</option>
           <option value="COUPON">{{ t("filters.offerCoupon") }}</option>
         </select>
-        <div class="field-help">Тип механики предложения.</div>
+        <div class="field-help">Бонус — доп. баллы, Множитель — x к начислению, Купон — разовая скидка.</div>
       </div>
       <div class="field-group">
         <input v-model.number="multiplier" type="number" :placeholder="t('placeholders.multiplier')" />
