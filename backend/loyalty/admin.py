@@ -97,7 +97,18 @@ class TenantAdmin(admin.ModelAdmin):
 
 
 class UserAdmin(DjangoUserAdmin, TenantScopedAdmin):
-    list_display = ("id", "email", "username", "role", "tenant", "email_verified", "is_active", "is_staff", "is_superuser")
+    list_display = (
+        "id",
+        "email",
+        "phone",
+        "username",
+        "role",
+        "tenant",
+        "email_verified",
+        "is_active",
+        "is_staff",
+        "is_superuser",
+    )
     list_filter = ("role", "email_verified", "is_active", "is_staff", "is_superuser", "tenant")
     search_fields = ("email", "username", "phone")
     ordering = ("id",)

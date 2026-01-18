@@ -68,9 +68,39 @@ const phone = ref("");
 const code = ref("");
 const message = ref("");
 const error = ref("");
+const telegramNonce = ref("");
 let messageTimer: number | null = null;
 
 const telegramUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string | undefined;
+
+function normalizeTelegramUsername(raw: string | undefined) {
+  if (!raw) {
+    return "";
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return "";
+  }
+  return trimmed.startsWith("@") ? trimmed.slice(1) : trimmed;
+}
+
+async function getTelegramUsername() {
+  const fromEnv = normalizeTelegramUsername(telegramUsername);
+  if (fromEnv) {
+    return fromEnv;
+  }
+  try {
+    const data = await apiFetch(`/t/${tenant}/auth/telegram/config`);
+    if (data?.configured && data?.bot_username) {
+      return normalizeTelegramUsername(data.bot_username);
+    }
+    showError(t("messages.telegramMissingBot"));
+    return "";
+  } catch (err: any) {
+    showError(err.message);
+    return "";
+  }
+}
 
 function showMessage(text: string) {
   message.value = text;
@@ -117,36 +147,50 @@ async function register() {
 }
 
 async function openTelegram() {
-  if (!telegramUsername) {
-    showError(t("messages.telegramMissingBot"));
+  const resolvedUsername = await getTelegramUsername();
+  if (!resolvedUsername) {
     return;
   }
   try {
-    await apiFetch(`/t/${tenant}/auth/telegram/start`, {
+    const data = await apiFetch(`/t/${tenant}/auth/telegram/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone: phone.value }),
     });
+    telegramNonce.value = data?.nonce || "";
+    const startPayload = data?.start_payload || tenant;
+    const link = `https://t.me/${resolvedUsername}?start=${encodeURIComponent(startPayload)}`;
+    window.open(link, "_blank");
+    showMessage(t("messages.telegramOpened"));
+    return;
   } catch (err: any) {
+    if (err.code === "TELEGRAM_NOT_CONFIGURED") {
+      showError(t("messages.telegramMissingBot"));
+      return;
+    }
     showError(err.message);
     return;
   }
-  const link = `https://t.me/${telegramUsername}?start=${tenant}`;
-  window.open(link, "_blank");
-  showMessage(t("messages.telegramOpened"));
 }
 
 async function verifyTelegram() {
   error.value = "";
   message.value = "";
   try {
+    const payload: Record<string, string> = {
+      phone: phone.value,
+      code: code.value,
+    };
+    if (telegramNonce.value) {
+      payload.nonce = telegramNonce.value;
+    }
     const data = await apiFetch(`/t/${tenant}/auth/telegram/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: phone.value, code: code.value }),
+      body: JSON.stringify(payload),
     });
     auth.setAuth({ user: data.user, tokens: data.tokens, tenant });
-    router.push(`/t/${tenant}/cabinet`);
+    router.push(`/t/${tenant}/profile`);
   } catch (err: any) {
     showError(err.message);
   }

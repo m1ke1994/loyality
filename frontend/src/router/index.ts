@@ -54,7 +54,21 @@ function getRoleDefaultPath(role: string | undefined, tenant: string) {
   return `/t/${tenant}/cabinet`;
 }
 
-function getTenantForRedirect(to: RouteLocationNormalized) {
+function requiresProfileCompletion(user: { first_name?: string; last_name?: string; email?: string }, tenant: string) {
+  if (!user?.first_name || !user?.last_name) {
+    return true;
+  }
+  if (!user?.email) {
+    return true;
+  }
+  if (user.email.endsWith(`@${tenant}.local`) || user.email.startsWith("phone_")) {
+    return true;
+  }
+  return false;
+}
+
+
+function getTenantForRedirect(to: RouteLocationNormalized) {
   const auth = useAuthStore();
   if (!authLoaded) {
     auth.load();
@@ -145,7 +159,18 @@ router.beforeEach(async (to) => {
       hasToken = false;
     }
   }
-  const role = auth.user?.role;
+  const role = auth.user?.role;
+
+
+  if (
+    hasToken &&
+    role === "CLIENT" &&
+    auth.user &&
+    requiresProfileCompletion(auth.user, tenant) &&
+    !to.path.startsWith(`/t/${tenant}/profile`)
+  ) {
+    return `/t/${tenant}/profile`;
+  }
 
   if (to.path === "/") {
     return hasToken ? getRoleDefaultPath(role, tenant) : `/t/${tenant}/login`;

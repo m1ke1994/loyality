@@ -100,6 +100,7 @@
     "location": "Точка"
   },
   "sections": {
+    "profileDetails": "Профиль клиента",
     "verifyEmail": "Подтверждение email",
     "bindPhone": "Привязка телефона",
     "changePassword": "Смена пароля",
@@ -186,6 +187,8 @@
     "otpSent": "OTP отправлен",
     "phoneVerified": "Телефон подтверждён",
     "passwordChanged": "Пароль изменён",
+    "profileRequired": "Введите имя и фамилию.",
+    "emailRequired": "Введите email.",
     "saved": "Сохранено",
     "created": "Создано",
     "confirmDelete": "Удалить запись?",
@@ -201,8 +204,9 @@
     "registerPasswordHelp": "Придумайте пароль от 8 символов.",
     "registerPasswordRepeatHelp": "Повторите пароль без ошибок.",
     "telegramPhoneHelp": "Введите тот же номер, который отправите в Telegram.",
-    "telegramMissingBot": "Telegram-бот не настроен.",
-    "telegramOpened": "Откройте Telegram и получите код."
+    "telegramMissingBot": "Telegram-бот не настроен. Укажите VITE_TELEGRAM_BOT_USERNAME и TELEGRAM_BOT_USERNAME.",
+    "telegramOpened": "Откройте Telegram и получите код.",
+    "verificationRequired": "Подтвердите email или телефон, чтобы получить QR-код."
   },
   "rules": {
     "earnLabel": "Начисление: {percent}%",

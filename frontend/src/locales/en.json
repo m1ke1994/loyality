@@ -99,8 +99,9 @@
     "disabled": "Disabled",
     "location": "Location"
   },
-  "sections": {
-    "verifyEmail": "Verify Email",
+  "sections": {
+    "profileDetails": "Client profile",
+    "verifyEmail": "Verify Email",
     "bindPhone": "Bind Phone",
     "changePassword": "Change Password",
     "addStaff": "Add Staff",
@@ -186,6 +187,8 @@
     "otpSent": "OTP sent",
     "phoneVerified": "Phone verified",
     "passwordChanged": "Password changed",
+    "profileRequired": "Enter first and last name.",
+    "emailRequired": "Enter email.",
     "saved": "Saved",
     "created": "Created",
     "confirmDelete": "Delete this item?",
@@ -201,8 +204,9 @@
     "registerPasswordHelp": "Choose a strong password (8+ chars).",
     "registerPasswordRepeatHelp": "Repeat the password without mistakes.",
     "telegramPhoneHelp": "Use the same phone number you share in Telegram.",
-    "telegramMissingBot": "Telegram bot is not configured.",
-    "telegramOpened": "Open Telegram and request your code."
+    "telegramMissingBot": "Telegram bot is not configured. Set VITE_TELEGRAM_BOT_USERNAME and TELEGRAM_BOT_USERNAME.",
+    "telegramOpened": "Open Telegram and request your code.",
+    "verificationRequired": "Verify email or phone to access the QR code."
   },
   "rules": {
     "earnLabel": "Earn: {percent}%",

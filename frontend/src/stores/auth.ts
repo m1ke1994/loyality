@@ -8,6 +8,7 @@ type User = {
   phone: string;
   phone_verified: boolean;
   email_verified: boolean;
+  is_verified: boolean;
   role: string;
   tenant_name?: string;
   tenant_slug?: string;

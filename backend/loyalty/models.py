@@ -119,6 +119,10 @@ class User(AbstractUser):
             return False
         return self.otp_hash == code_hash
 
+    @property
+    def is_verified(self) -> bool:
+        return self.email_verified or self.phone_verified
+
 
 class StaffProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="staff_profile", verbose_name="Сотрудник")

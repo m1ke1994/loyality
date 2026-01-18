@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from "vue";
+import { computed, onMounted, onBeforeUnmount, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import QRCode from "qrcode";
@@ -19,16 +19,21 @@ import { useAuthStore } from "../../stores/auth";
 
 const route = useRoute();
 const { t } = useI18n();
-const auth = useAuthStore();
-const tenant = route.params.tenant as string;
-const canvas = ref<HTMLCanvasElement | null>(null);
-const error = ref("");
-let timer: number | null = null;
+const auth = useAuthStore();
+const tenant = route.params.tenant as string;
+const canvas = ref<HTMLCanvasElement | null>(null);
+const error = ref("");
+let timer: number | null = null;
+const isVerified = computed(() => Boolean(auth.user?.is_verified));
 
-async function issueQr() {
-  error.value = "";
-  try {
-    const data = await apiFetch(`/t/${tenant}/client/qr/issue`, {
+async function issueQr() {
+  error.value = "";
+  if (!isVerified.value) {
+    error.value = t("messages.verificationRequired");
+    return;
+  }
+  try {
+    const data = await apiFetch(`/t/${tenant}/client/qr/issue`, {
       method: "POST",
       headers: { Authorization: `Bearer ${auth.tokens?.access}` },
     });

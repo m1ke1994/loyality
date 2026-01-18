@@ -17,6 +17,7 @@ services:
       retries: 10
   backend:
     build: ./backend
+    env_file: .env
     environment:
       DJANGO_DEBUG: "1"
       DJANGO_SECRET_KEY: dev-secret-key
@@ -48,6 +49,7 @@ services:
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
   frontend:
     build: ./frontend
+    env_file: .env
     environment:
       VITE_API_BASE: http://localhost:8000/api/v1
     volumes:
@@ -63,15 +65,13 @@ services:
   telegram-bot:
     build: ./backend
     profiles: ["telegram"]
+    env_file: .env
     environment:
       DJANGO_DEBUG: "1"
       DJANGO_SECRET_KEY: dev-secret-key
       DJANGO_ALLOWED_HOSTS: "*"
       DATABASE_URL: postgres://loyalty:loyalty@db:5432/loyalty
       TELEGRAM_MODE: polling
-      TELEGRAM_BOT_TOKEN: ""
-      TELEGRAM_CODE_RATE_LIMIT_PER_HOUR: "5"
-      TELEGRAM_CHAT_RATE_LIMIT_PER_HOUR: "5"
     volumes:
       - ./backend:/app
     depends_on:

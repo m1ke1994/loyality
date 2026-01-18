@@ -1,5 +1,7 @@
 import hashlib
 import secrets
+import logging
+import secrets
 from decimal import Decimal
 from uuid import uuid4
 from datetime import timedelta, datetime
@@ -44,6 +46,7 @@ from .serializers import (
     PhoneConfirmSerializer,
     TelegramStartSerializer,
     TelegramVerifySerializer,
+    ProfileUpdateSerializer,
     QRValidateSerializer,
     PointsSerializer,
     RefundSerializer,
@@ -62,12 +65,22 @@ from .serializers import (
 from .permissions import IsTenantMember, IsClient, IsCashier, IsAdmin
 from .telegram_auth import (
     cache_tenant_slug,
+    cache_login_nonce,
+    cache_pending_login,
+    clear_pending_login,
     get_cached_tenant_slug,
+    get_pending_login_phone,
     hash_otp,
+    build_telegram_start_payload,
+    parse_telegram_start_payload,
+    telegram_configured,
+    get_telegram_bot_username,
     issue_telegram_code,
     normalize_phone,
     send_telegram_message,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def issue_tokens(user: User):
@@ -292,7 +305,7 @@ def handle_login(request, tenant_slug, allowed_roles: list[str]):
         return Response({"detail": "INVALID_CREDENTIALS"}, status=status.HTTP_401_UNAUTHORIZED)
     if allowed_roles and user.role not in allowed_roles:
         return Response({"detail": "ROLE_NOT_ALLOWED"}, status=status.HTTP_403_FORBIDDEN)
-    if not user.is_active or not user.email_verified:
+    if not user.is_active or not user.is_verified:
         now = timezone.now()
         if not user.email_verified and can_resend_email_code(user, now):
             invalidate_email_codes(user)
@@ -455,29 +468,87 @@ class TelegramStartView(TenantMixin, APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, tenant_slug):
+        configured, reason = telegram_configured()
+        if not configured:
+            logger.warning("Telegram auth not configured: %s", reason)
+            return Response({"detail": "TELEGRAM_NOT_CONFIGURED"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = TelegramStartSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         tenant = self.get_tenant()
-        phone = normalize_phone(serializer.validated_data["phone"])
+        phone_raw = serializer.validated_data["phone"]
+        phone = normalize_phone(phone_raw)
         if not phone:
             return Response({"detail": "PHONE_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
         rate_key = f"rl:telegram:start:{tenant.id}:{phone}"
         if rate_limited(rate_key, settings.TELEGRAM_CODE_RATE_LIMIT_PER_HOUR):
             return Response({"detail": "RATE_LIMIT"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-        return Response({"detail": "OK", "expires_in": settings.OTP_TTL_SECONDS})
+        nonce = secrets.token_urlsafe(12)
+        cache_pending_login(tenant.id, nonce, phone)
+        logger.info(
+            "telegram.start tenant_id=%s tenant_slug=%s phone_raw=%s phone_normalized=%s nonce=%s",
+            tenant.id,
+            tenant.slug,
+            phone_raw,
+            phone,
+            nonce,
+        )
+        if settings.TELEGRAM_DEV_MODE:
+            _, code = issue_telegram_code(tenant, phone)
+            return Response(
+                {
+                    "detail": "DEV_CODE_ISSUED",
+                    "expires_in": settings.OTP_TTL_SECONDS,
+                    "code": code,
+                    "start_payload": build_telegram_start_payload(tenant.slug, nonce),
+                    "nonce": nonce,
+                }
+            )
+        return Response(
+            {
+                "detail": "OK",
+                "expires_in": settings.OTP_TTL_SECONDS,
+                "start_payload": build_telegram_start_payload(tenant.slug, nonce),
+                "nonce": nonce,
+            }
+        )
 
 
 class TelegramVerifyView(TenantMixin, APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, tenant_slug):
+        configured, reason = telegram_configured()
+        if not configured:
+            logger.warning("Telegram auth not configured: %s", reason)
+            return Response({"detail": "TELEGRAM_NOT_CONFIGURED"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = TelegramVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         tenant = self.get_tenant()
-        phone = normalize_phone(serializer.validated_data["phone"])
+        phone_raw = serializer.validated_data["phone"]
+        phone = normalize_phone(phone_raw)
         if not phone:
             return Response({"detail": "PHONE_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
         code = serializer.validated_data["code"]
+        nonce = (serializer.validated_data.get("nonce") or "").strip()
+        logger.info(
+            "telegram.verify tenant_id=%s tenant_slug=%s phone_raw=%s phone_normalized=%s code=%s",
+            tenant.id,
+            tenant.slug,
+            phone_raw,
+            phone,
+            code,
+        )
+        if nonce:
+            pending_phone = get_pending_login_phone(tenant.id, nonce)
+            if not pending_phone or pending_phone != phone:
+                logger.warning(
+                    "telegram.verify tenant_mismatch tenant_id=%s phone_normalized=%s nonce=%s pending_phone=%s",
+                    tenant.id,
+                    phone,
+                    nonce,
+                    pending_phone,
+                )
+                return Response({"detail": "TENANT_MISMATCH"}, status=status.HTTP_400_BAD_REQUEST)
         rate_key = f"rl:telegram:verify:{tenant.id}:{phone}"
         if rate_limited(rate_key, settings.TELEGRAM_VERIFY_RATE_LIMIT_PER_HOUR):
             return Response({"detail": "RATE_LIMIT"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
@@ -489,13 +560,26 @@ class TelegramVerifyView(TenantMixin, APIView):
                 purpose=OneTimeCode.Purpose.TELEGRAM_PHONE_LOGIN,
                 recipient=phone,
                 consumed_at__isnull=True,
-                expires_at__gte=now,
             )
             .order_by("-created_at")
             .first()
         )
         if not record:
+            logger.warning(
+                "telegram.verify code_not_found tenant_id=%s phone_normalized=%s",
+                tenant.id,
+                phone,
+            )
             return Response({"detail": "CODE_INVALID"}, status=status.HTTP_400_BAD_REQUEST)
+        if record.expires_at < now:
+            record.consumed_at = now
+            record.save(update_fields=["consumed_at"])
+            logger.info(
+                "telegram.verify code_expired tenant_id=%s phone_normalized=%s",
+                tenant.id,
+                phone,
+            )
+            return Response({"detail": "CODE_EXPIRED"}, status=status.HTTP_400_BAD_REQUEST)
         if record.attempts >= settings.OTP_MAX_ATTEMPTS:
             record.consumed_at = now
             record.save(update_fields=["consumed_at"])
@@ -507,10 +591,18 @@ class TelegramVerifyView(TenantMixin, APIView):
                 record.save(update_fields=["attempts", "consumed_at"])
                 return Response({"detail": "CODE_ATTEMPTS_EXCEEDED"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
             record.save(update_fields=["attempts"])
+            logger.warning(
+                "telegram.verify code_mismatch tenant_id=%s phone_normalized=%s attempts=%s",
+                tenant.id,
+                phone,
+                record.attempts,
+            )
             return Response({"detail": "CODE_INVALID"}, status=status.HTTP_400_BAD_REQUEST)
 
         record.consumed_at = now
         record.save(update_fields=["consumed_at"])
+        if nonce:
+            clear_pending_login(tenant.id, nonce)
 
         user = User.objects.filter(tenant=tenant, phone=phone).first()
         if user and user.role != User.Role.CLIENT:
@@ -536,7 +628,9 @@ class TelegramVerifyView(TenantMixin, APIView):
         else:
             user.phone = phone
             user.phone_verified = True
-            user.save(update_fields=["phone", "phone_verified"])
+            if not user.is_active:
+                user.is_active = True
+            user.save(update_fields=["phone", "phone_verified", "is_active"])
 
         tokens = issue_tokens(user)
         audit_log(tenant, user, "login_telegram", {"phone": phone})
@@ -562,7 +656,11 @@ class TelegramWebhookView(APIView):
         if text.startswith("/start"):
             parts = text.split(maxsplit=1)
             if len(parts) > 1:
-                cache_tenant_slug(chat_id, parts[1].strip())
+                tenant_slug, nonce = parse_telegram_start_payload(parts[1].strip())
+                if tenant_slug:
+                    cache_tenant_slug(chat_id, tenant_slug)
+                if nonce:
+                    cache_login_nonce(chat_id, nonce)
             return Response({"detail": "OK"})
 
         contact = message.get("contact")
@@ -610,6 +708,21 @@ class TelegramWebhookView(APIView):
         except RuntimeError:
             pass
         return Response({"detail": "OK"})
+
+
+class TelegramConfigView(TenantMixin, APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, tenant_slug):
+        configured, reason = telegram_configured()
+        username = get_telegram_bot_username() if configured else ""
+        return Response(
+            {
+                "configured": configured,
+                "bot_username": username,
+                "reason": reason,
+            }
+        )
 
 
 class ClientMeView(TenantMixin, APIView):
@@ -695,7 +808,7 @@ class ClientQRIssueView(TenantMixin, APIView):
     permission_classes = [IsTenantMember, IsClient]
 
     def post(self, request, tenant_slug):
-        if not request.user.email_verified:
+        if not request.user.is_verified:
             return Response({"detail": "EMAIL_NOT_VERIFIED"}, status=status.HTTP_400_BAD_REQUEST)
         token = uuid4().hex
         expires_at = timezone.now() + timedelta(seconds=10)
@@ -715,6 +828,31 @@ class ClientPasswordChangeView(TenantMixin, APIView):
         request.user.save()
         audit_log(request.user.tenant, request.user, "password_change", {})
         return Response({"detail": "PASSWORD_CHANGED"})
+
+
+class ClientProfileUpdateView(TenantMixin, APIView):
+    permission_classes = [IsTenantMember, IsClient]
+
+    def post(self, request, tenant_slug):
+        serializer = ProfileUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        first_name = serializer.validated_data["first_name"].strip()
+        last_name = serializer.validated_data["last_name"].strip()
+        email = serializer.validated_data["email"].lower().strip()
+        if (
+            email
+            and email != request.user.email
+            and User.objects.filter(tenant=request.user.tenant, email=email).exclude(id=request.user.id).exists()
+        ):
+            return Response({"detail": "EMAIL_EXISTS"}, status=status.HTTP_400_BAD_REQUEST)
+        request.user.first_name = first_name
+        request.user.last_name = last_name
+        if email and email != request.user.email:
+            request.user.email = email
+            request.user.email_verified = False
+        request.user.save(update_fields=["first_name", "last_name", "email", "email_verified"])
+        audit_log(request.user.tenant, request.user, "profile_update", {})
+        return Response({"user": UserSerializer(request.user).data})
 
 
 class LoyaltyQRValidateView(TenantMixin, APIView):
@@ -884,6 +1022,7 @@ class AdminCustomersView(TenantMixin, APIView):
                     "points": card.current_points if card else 0,
                     "email_verified": user.email_verified,
                     "phone_verified": user.phone_verified,
+                    "is_verified": user.is_verified,
                 }
             )
         return Response(data)

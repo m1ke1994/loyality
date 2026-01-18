@@ -55,6 +55,13 @@ class TelegramStartSerializer(serializers.Serializer):
 class TelegramVerifySerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=32)
     code = serializers.RegexField(regex=r"^\d{6}$")
+    nonce = serializers.CharField(max_length=64, required=False, allow_blank=True)
+
+
+class ProfileUpdateSerializer(serializers.Serializer):
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
 
 
 class QRValidateSerializer(serializers.Serializer):
@@ -89,6 +96,7 @@ class PasswordChangeSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     tenant_name = serializers.CharField(source="tenant.name", read_only=True)
     tenant_slug = serializers.CharField(source="tenant.slug", read_only=True)
+    is_verified = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -100,6 +108,7 @@ class UserSerializer(serializers.ModelSerializer):
             "phone",
             "phone_verified",
             "email_verified",
+            "is_verified",
             "role",
             "tenant_name",
             "tenant_slug",

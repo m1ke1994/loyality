@@ -45,7 +45,7 @@ async function verify() {
       body: JSON.stringify({ email: email.value, code: code.value }),
     });
     auth.setAuth({ user: data.user, tokens: data.tokens, tenant });
-    router.push(`/t/${tenant}/cabinet`);
+    router.push(`/t/${tenant}/profile`);
   } catch (err: any) {
     error.value = err.message;
   } finally {
