@@ -194,7 +194,7 @@
     "confirmDelete": "Delete this item?",
     "refundSuccess": "Refunded: {points} pts. Balance: {balance}",
     "earnSuccess": "OK: {points} pts. Balance: {balance}",
-    "qrRefresh": "Refreshes every 5 seconds.",
+    "qrRefresh": "Refreshes every 10 seconds.",
     "verificationSentTo": "We sent a verification code to {email}.",
     "noData": "No data yet.",
     "addLocationsFirst": "Add locations first in the \"Locations\" section.",

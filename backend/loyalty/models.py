@@ -82,7 +82,7 @@ class User(AbstractUser):
         CASHIER = "CASHIER", "Кассир"
         ADMIN = "ADMIN", "Администратор"
 
-    email = models.EmailField("Email")
+    email = models.EmailField("Email", blank=True, null=True)
     tenant = models.ForeignKey(
         Tenant, on_delete=models.CASCADE, related_name="users", null=True, blank=True, verbose_name="Арендатор"
     )

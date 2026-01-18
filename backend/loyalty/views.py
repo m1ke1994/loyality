@@ -146,9 +146,9 @@ def create_email_code(user: User, now: datetime):
     return record
 
 
-def mask_email(email: str) -> str:
-    if "@" not in email:
-        return email
+def mask_email(email: str | None) -> str:
+    if not email or "@" not in email:
+        return email or ""
     name, domain = email.split("@", 1)
     if len(name) <= 2:
         masked = "*" * len(name)
@@ -608,15 +608,15 @@ class TelegramVerifyView(TenantMixin, APIView):
         if user and user.role != User.Role.CLIENT:
             return Response({"detail": "ROLE_NOT_ALLOWED"}, status=status.HTTP_403_FORBIDDEN)
         if not user:
-            email_base = f"phone_{phone.strip('+')}@{tenant.slug}.local"
-            email = email_base
+            username_base = f"{tenant.id}:phone:{phone}"
+            username = username_base
             counter = 1
-            while User.objects.filter(tenant=tenant, email=email).exists():
-                email = f"phone_{phone.strip('+')}_{counter}@{tenant.slug}.local"
+            while User.objects.filter(username=username).exists():
+                username = f"{username_base}:{counter}"
                 counter += 1
-            user = User.objects.create_user(
-                email=email,
-                password=None,
+            user = User(
+                email=None,
+                username=username,
                 tenant=tenant,
                 role=User.Role.CLIENT,
                 is_active=True,
@@ -624,6 +624,8 @@ class TelegramVerifyView(TenantMixin, APIView):
                 phone=phone,
                 phone_verified=True,
             )
+            user.set_unusable_password()
+            user.save()
             LoyaltyCard.objects.create(user=user, tenant=tenant)
         else:
             user.phone = phone

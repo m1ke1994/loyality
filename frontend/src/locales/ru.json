@@ -194,7 +194,7 @@
     "confirmDelete": "Удалить запись?",
     "refundSuccess": "Возврат: {points} балл(ов). Баланс: {balance}",
     "earnSuccess": "Начислено: {points} балл(ов). Баланс: {balance}",
-    "qrRefresh": "QR-код обновляется каждые 5 секунд.",
+    "qrRefresh": "QR-код обновляется каждые 10 секунд.",
     "verificationSentTo": "Код подтверждения отправлен на {email}.",
     "noData": "Нет данных.",
     "addLocationsFirst": "Сначала добавьте точки в разделе «Точки».",

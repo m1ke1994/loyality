@@ -45,7 +45,7 @@ async function issueQr() {
 
 onMounted(() => {
   issueQr();
-  timer = window.setInterval(issueQr, 5000);
+  timer = window.setInterval(issueQr, 10000);
 });
 
 onBeforeUnmount(() => {

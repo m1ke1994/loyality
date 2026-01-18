@@ -174,3 +174,4 @@ Admin:
 - GET `/api/v1/{tenant}/admin/operations`
 - GET/POST `/api/v1/{tenant}/admin/offers`
 - GET/POST `/api/v1/{tenant}/admin/settings`
+Открой админку: http://127.0.0.1:8000/admin/
