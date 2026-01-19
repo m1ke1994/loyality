@@ -138,21 +138,22 @@ class Command(BaseCommand):
                 return
             rate_key_phone = f"rl:telegram:code:{tenant.id}:{phone}"
             rate_key_chat = f"rl:telegram:chat:{tenant.id}:{message.chat.id}"
-            limited_phone = await sync_to_async(rate_limited, thread_sensitive=True)(
-                rate_key_phone, settings.TELEGRAM_CODE_RATE_LIMIT_PER_HOUR
-            )
-            limited_chat = await sync_to_async(rate_limited, thread_sensitive=True)(
-                rate_key_chat, settings.TELEGRAM_CHAT_RATE_LIMIT_PER_HOUR
-            )
-            if limited_phone or limited_chat:
-                logger.info(
-                    "telegram.contact rate_limited tenant_id=%s phone=%s chat_id=%s",
-                    tenant.id,
-                    phone,
-                    message.chat.id,
+            if not settings.TELEGRAM_DISABLE_RATE_LIMIT:
+                limited_phone = await sync_to_async(rate_limited, thread_sensitive=True)(
+                    rate_key_phone, settings.TELEGRAM_CODE_RATE_LIMIT_PER_HOUR
                 )
-                await message.answer("Too many requests. Please try later.")
-                return
+                limited_chat = await sync_to_async(rate_limited, thread_sensitive=True)(
+                    rate_key_chat, settings.TELEGRAM_CHAT_RATE_LIMIT_PER_HOUR
+                )
+                if limited_phone or limited_chat:
+                    logger.info(
+                        "telegram.contact rate_limited tenant_id=%s phone=%s chat_id=%s",
+                        tenant.id,
+                        phone,
+                        message.chat.id,
+                    )
+                    await message.answer("Too many requests. Please try later.")
+                    return
             try:
                 code = await sync_to_async(create_or_update_telegram_auth, thread_sensitive=True)(
                     phone,

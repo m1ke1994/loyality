@@ -26,6 +26,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "loyalty.middleware.TenantMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -91,6 +92,12 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    }
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -115,6 +122,14 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if origin.strip()]
 CORS_ALLOW_ALL_ORIGINS = not CORS_ALLOWED_ORIGINS
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
+
+USE_X_FORWARDED_HOST = os.getenv("DJANGO_USE_X_FORWARDED_HOST", "0") == "1"
+SECURE_PROXY_SSL_HEADER = (
+    ("HTTP_X_FORWARDED_PROTO", "https")
+    if os.getenv("DJANGO_SECURE_PROXY_SSL_HEADER", "0") == "1"
+    else None
+)
+SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", "0") == "1"
 
 X_FRAME_OPTIONS = "ALLOWALL"
 
@@ -154,3 +169,4 @@ TELEGRAM_DEV_MODE = os.getenv("TELEGRAM_DEV_MODE", "0") == "1"
 TELEGRAM_CODE_RATE_LIMIT_PER_HOUR = int(os.getenv("TELEGRAM_CODE_RATE_LIMIT_PER_HOUR", "5"))
 TELEGRAM_CHAT_RATE_LIMIT_PER_HOUR = int(os.getenv("TELEGRAM_CHAT_RATE_LIMIT_PER_HOUR", "5"))
 TELEGRAM_VERIFY_RATE_LIMIT_PER_HOUR = int(os.getenv("TELEGRAM_VERIFY_RATE_LIMIT_PER_HOUR", "10"))
+TELEGRAM_DISABLE_RATE_LIMIT = os.getenv("TELEGRAM_DISABLE_RATE_LIMIT", "0") == "1"

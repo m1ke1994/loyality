@@ -41,6 +41,11 @@ done
 # --- Apply migrations ---
 python manage.py migrate
 
+# --- Collect static files ---
+if [ "${DJANGO_COLLECTSTATIC:-1}" = "1" ]; then
+  python manage.py collectstatic --noinput
+fi
+
 # --- Seed demo tenant ---
 if [ "${SEED_DEMO:-0}" = "1" ]; then
   python manage.py seed_demo

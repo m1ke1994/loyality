@@ -479,10 +479,11 @@ class TelegramStartView(TenantMixin, APIView):
         phone = normalize_phone(phone_raw)
         if not phone:
             return Response({"detail": "PHONE_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
-        rate_key = f"rl:telegram:start:{tenant.id}:{phone}"
-        if rate_limited(rate_key, settings.TELEGRAM_CODE_RATE_LIMIT_PER_HOUR):
-            return Response({"detail": "RATE_LIMIT"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-        nonce = secrets.token_urlsafe(12)
+        if not settings.TELEGRAM_DISABLE_RATE_LIMIT:
+            rate_key = f"rl:telegram:start:{tenant.id}:{phone}"
+            if rate_limited(rate_key, settings.TELEGRAM_CODE_RATE_LIMIT_PER_HOUR):
+                return Response({"detail": "RATE_LIMIT"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        nonce = secrets.token_hex(12)
         cache_pending_login(tenant.id, nonce, phone)
         logger.info(
             "telegram.start tenant_id=%s tenant_slug=%s phone_raw=%s phone_normalized=%s nonce=%s",
@@ -693,16 +694,17 @@ class TelegramWebhookView(APIView):
                 pass
             return Response({"detail": "OK"})
 
-        rate_key_phone = f"rl:telegram:code:{tenant.id}:{normalized}"
-        rate_key_chat = f"rl:telegram:chat:{tenant.id}:{chat_id}"
-        if rate_limited(rate_key_phone, settings.TELEGRAM_CODE_RATE_LIMIT_PER_HOUR) or rate_limited(
-            rate_key_chat, settings.TELEGRAM_CHAT_RATE_LIMIT_PER_HOUR
-        ):
-            try:
-                send_telegram_message(chat_id, "Too many requests. Please try later.")
-            except RuntimeError:
-                pass
-            return Response({"detail": "OK"})
+        if not settings.TELEGRAM_DISABLE_RATE_LIMIT:
+            rate_key_phone = f"rl:telegram:code:{tenant.id}:{normalized}"
+            rate_key_chat = f"rl:telegram:chat:{tenant.id}:{chat_id}"
+            if rate_limited(rate_key_phone, settings.TELEGRAM_CODE_RATE_LIMIT_PER_HOUR) or rate_limited(
+                rate_key_chat, settings.TELEGRAM_CHAT_RATE_LIMIT_PER_HOUR
+            ):
+                try:
+                    send_telegram_message(chat_id, "Too many requests. Please try later.")
+                except RuntimeError:
+                    pass
+                return Response({"detail": "OK"})
 
         _, code = issue_telegram_code(tenant, normalized, chat_id=chat_id)
         try:
